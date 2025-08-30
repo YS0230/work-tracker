@@ -142,7 +142,13 @@
         </template>
       </el-table-column>
       <el-table-column prop="hours" label="工時" width="60" />
-      <el-table-column prop="description" label="工作描述" min-width="200" show-overflow-tooltip />
+      <el-table-column prop="description" label="工作描述" min-width="200">
+        <template #default="scope">
+          <div style="line-height: 1.4; word-wrap: break-word; white-space: pre-wrap;">
+            {{ scope.row.description || '-' }}
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column prop="completed" label="完成狀態" width="100" align="center">
         <template #default="scope">
           <el-tag :type="scope.row.completed ? 'success' : 'warning'">
