@@ -216,7 +216,8 @@ def delete_task(task_id):
 # 工作紀錄 API
 @app.route('/api/work-logs', methods=['GET'])
 def get_work_logs():
-    query = WorkLog.query
+    # 使用 join 預先載入任務和類別資訊，避免 N+1 查詢問題
+    query = WorkLog.query.join(Task).join(Category)
     
     # 處理查詢參數
     if request.args.get('work_date'):
@@ -224,12 +225,12 @@ def get_work_logs():
         query = query.filter(WorkLog.work_date == work_date)
     
     # 處理工作日期範圍
-    if request.args.get('work_date_start'):
-        work_date_start = datetime.strptime(request.args.get('work_date_start'), '%Y-%m-%d').date()
+    if request.args.get('start_date'):
+        work_date_start = datetime.strptime(request.args.get('start_date'), '%Y-%m-%d').date()
         query = query.filter(WorkLog.work_date >= work_date_start)
     
-    if request.args.get('work_date_end'):
-        work_date_end = datetime.strptime(request.args.get('work_date_end'), '%Y-%m-%d').date()
+    if request.args.get('end_date'):
+        work_date_end = datetime.strptime(request.args.get('end_date'), '%Y-%m-%d').date()
         query = query.filter(WorkLog.work_date <= work_date_end)
     
     if request.args.get('task_id'):

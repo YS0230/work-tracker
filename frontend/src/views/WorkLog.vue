@@ -130,13 +130,17 @@
     <el-table :data="filteredWorkLogs" border style="width: 100%">
       <el-table-column type="index" label="流水號" width="80" :index="(index) => index + 1" />
       <el-table-column prop="work_date" label="工作日期" width="100" />
-      <el-table-column prop="task_case_number" label="案件編號" width="120" />
-      <el-table-column prop="task_title" label="任務標題" min-width="200">
+      <el-table-column label="案件編號" width="120">
+        <template #default="scope">
+          {{ scope.row.task?.case_number }}
+        </template>
+      </el-table-column>
+      <el-table-column label="任務標題" min-width="200">
         <template #default="scope">
           <div>
-            <div>{{ scope.row.task_title }}</div>
-            <div v-if="scope.row.task_description" style="color: #999; font-size: 12px; margin-top: 2px;">
-              ({{ scope.row.task_description }})
+            <div>{{ scope.row.task?.title }}</div>
+            <div v-if="scope.row.task?.description" style="color: #999; font-size: 12px; margin-top: 2px;">
+              ({{ scope.row.task?.description }})
             </div>
           </div>
         </template>
@@ -327,8 +331,8 @@ const searchWorkLogs = async () => {
     
     // 處理日期範圍篩選（如果有範圍則優先使用範圍）
     if (filters.work_date_range && filters.work_date_range.length === 2) {
-      params.work_date_start = filters.work_date_range[0]
-      params.work_date_end = filters.work_date_range[1]
+      params.start_date = filters.work_date_range[0]
+      params.end_date = filters.work_date_range[1]
       delete params.work_date // 移除單一日期參數
     }
     
@@ -379,8 +383,8 @@ const filteredWorkLogs = computed(() => {
     const keyword = searchKeyword.value.toLowerCase()
     result = result.filter(log => {
       return (
-        log.task_case_number?.toLowerCase().includes(keyword) ||
-        log.task_title?.toLowerCase().includes(keyword) ||
+        log.task?.case_number?.toLowerCase().includes(keyword) ||
+        log.task?.title?.toLowerCase().includes(keyword) ||
         log.description?.toLowerCase().includes(keyword)
       )
     })
@@ -390,7 +394,7 @@ const filteredWorkLogs = computed(() => {
   if (filters.case_number) {
     const caseNumber = filters.case_number.toLowerCase()
     result = result.filter(log => 
-      log.task_case_number?.toLowerCase().includes(caseNumber)
+      log.task?.case_number?.toLowerCase().includes(caseNumber)
     )
   }
   
@@ -398,7 +402,7 @@ const filteredWorkLogs = computed(() => {
   if (filters.task_title) {
     const taskTitle = filters.task_title.toLowerCase()
     result = result.filter(log => 
-      log.task_title?.toLowerCase().includes(taskTitle)
+      log.task?.title?.toLowerCase().includes(taskTitle)
     )
   }
   
@@ -528,8 +532,8 @@ const exportCSV = () => {
   const csvData = filteredWorkLogs.value.map((log, index) => [
     index + 1,
     log.work_date || '',
-    log.task_case_number || '',
-    log.task_title || '',
+    log.task?.case_number || '',
+    log.task?.title || '',
     log.hours || '',
     log.description || '',
     log.completed ? '已完成' : '未完成',

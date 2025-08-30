@@ -1,40 +1,5 @@
 <template>
   <div>
-    <!-- 日期範圍查詢 -->
-    <el-row :gutter="20" style="margin-bottom: 20px">
-      <el-col :span="24">
-        <el-card>
-          <template #header>
-            <div style="display: flex; justify-content: space-between; align-items: center">
-              <span>工作查詢條件</span>
-              <el-icon><Search /></el-icon>
-            </div>
-          </template>
-          
-          <div style="display: flex; align-items: center; justify-content: space-between;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <span style="font-size: 14px; color: #606266;">時間範圍：</span>
-              <el-date-picker
-                v-model="dateRange"
-                type="daterange"
-                range-separator="至"
-                start-placeholder="開始日期"
-                end-placeholder="結束日期"
-                format="YYYY-MM-DD"
-                value-format="YYYY-MM-DD"
-                @change="handleDateRangeChange"
-                style="width: 300px;"
-              />
-            </div>
-            <el-button @click="refreshData" :loading="loading" circle>
-              <el-icon><Refresh /></el-icon>
-            </el-button>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
-
-
     <!-- 上週工作資訊 -->
     <el-row :gutter="20" style="margin-bottom: 20px">
       <el-col :span="24">
@@ -87,13 +52,81 @@
       </el-col>
     </el-row>
 
+    <!-- 上週類別工時分布 -->
+    <el-row :gutter="20" style="margin-bottom: 20px;">
+      <el-col :span="12">
+        <el-card>
+          <template #header>
+            <div style="display: flex; justify-content: space-between; align-items: center">
+              <span>上週類別工時分布</span>
+              <el-icon><Pie /></el-icon>
+            </div>
+          </template>
+          
+          <div class="chart-container">
+            <canvas ref="lastWeekCategoryChartRef" class="pie-chart-canvas"></canvas>
+          </div>
+        </el-card>
+      </el-col>
+      
+      <!-- 上週任務標題工時分布 -->
+      <el-col :span="12">
+        <el-card>
+          <template #header>
+            <div style="display: flex; justify-content: space-between; align-items: center">
+              <span>上週任務標題工時分布</span>
+              <el-icon><Pie /></el-icon>
+            </div>
+          </template>
+          
+          <div class="chart-container">
+            <canvas ref="lastWeekTaskChartRef" class="pie-chart-canvas"></canvas>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <!-- 日期範圍查詢 -->
+    <el-row :gutter="20" style="margin-bottom: 20px">
+      <el-col :span="24">
+        <el-card>
+          <template #header>
+            <div style="display: flex; justify-content: space-between; align-items: center">
+              <span>工作查詢條件</span>
+              <el-icon><Search /></el-icon>
+            </div>
+          </template>
+          
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 14px; color: #606266;">時間範圍：</span>
+              <el-date-picker
+                v-model="dateRange"
+                type="daterange"
+                range-separator="至"
+                start-placeholder="開始日期"
+                end-placeholder="結束日期"
+                format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD"
+                @change="handleDateRangeChange"
+                style="width: 300px;"
+              />
+            </div>
+            <el-button @click="refreshData" :loading="loading" circle>
+              <el-icon><Refresh /></el-icon>
+            </el-button>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
+
     <!-- 類別工時分布 -->
     <el-row :gutter="20" style="margin-bottom: 20px">
       <el-col :span="24">
         <el-card>
           <template #header>
             <div style="display: flex; justify-content: space-between; align-items: center">
-              <span>類別工時分布</span>
+              <span>類別工時分布 ({{ currentRangeDisplay }})</span>
               <el-icon><Pie /></el-icon>
             </div>
           </template>
@@ -115,7 +148,7 @@ import { ElMessage } from 'element-plus'
 import { 
   Pie, Refresh, Search, Document, DocumentAdd, Download
 } from '@element-plus/icons-vue'
-import { workLogApi, taskApi } from '../api'
+import { workLogApi } from '../api'
 import {
   Chart as ChartJS,
   Title,
@@ -135,8 +168,9 @@ export default {
   },
   setup() {
     const workLogs = ref([])
-    const tasks = ref([])
     const workHoursChartRef = ref(null)
+    const lastWeekCategoryChartRef = ref(null)
+    const lastWeekTaskChartRef = ref(null)
     
     // 獲取上週日期範圍
     const getLastWeekRange = () => {
@@ -186,6 +220,8 @@ export default {
     const dateRange = ref(getCurrentMonthRange())
     const loading = ref(false)
     let workHoursChartInstance = null
+    let lastWeekCategoryChartInstance = null
+    let lastWeekTaskChartInstance = null
     const lastWeekInfo = getLastWeekRange()
     
     
@@ -207,8 +243,7 @@ export default {
       const categoryHours = {}
       
       filteredWorkLogs.forEach(log => {
-        const task = tasks.value.find(t => t.id === log.task_id)
-        const categoryName = task?.category_name || '未分類'
+        const categoryName = log.task?.category_name || '未分類'
         if (!categoryHours[categoryName]) {
           categoryHours[categoryName] = 0
         }
@@ -237,25 +272,16 @@ export default {
       }
     }
     
-    const loadTasks = async () => {
-      try {
-        const response = await taskApi.getAll()
-        tasks.value = response.data
-      } catch (error) {
-        ElMessage.error('載入任務資料失敗')
-      }
-    }
     
     const refreshData = async () => {
       loading.value = true
       try {
         const [startDate, endDate] = dateRange.value || []
-        await Promise.all([
-          loadWorkLogs(startDate, endDate), 
-          loadTasks()
-        ])
+        await loadWorkLogs(startDate, endDate)
         await nextTick()
         initWorkHoursChart()
+        initLastWeekCategoryChart()
+        initLastWeekTaskChart()
         ElMessage.success('資料已刷新')
       } finally {
         loading.value = false
@@ -275,9 +301,14 @@ export default {
       
       if (workHoursChartInstance) {
         workHoursChartInstance.destroy()
+        workHoursChartInstance = null
       }
       
-      if (workHoursStats.value.length === 0) return
+      if (workHoursStats.value.length === 0) {
+        const ctx = workHoursChartRef.value.getContext('2d')
+        ctx.clearRect(0, 0, workHoursChartRef.value.width, workHoursChartRef.value.height)
+        return
+      }
       
       const ctx = workHoursChartRef.value.getContext('2d')
       const totalHours = workHoursStats.value.reduce((sum, item) => sum + item.hours, 0)
@@ -348,6 +379,212 @@ export default {
       return colors[index % colors.length]
     }
     
+    // 上週類別工時統計
+    const lastWeekCategoryStats = computed(() => {
+      const lastWeek = getLastWeekRange()
+      const startDate = new Date(lastWeek.start)
+      const endDate = new Date(lastWeek.end + ' 23:59:59')
+      
+      const filteredWorkLogs = workLogs.value.filter(log => {
+        if (!log.work_date) return false
+        const workDate = new Date(log.work_date)
+        return workDate >= startDate && workDate <= endDate
+      })
+      
+      const categoryHours = {}
+      
+      filteredWorkLogs.forEach(log => {
+        const categoryName = log.task?.category_name || '未分類'
+        if (!categoryHours[categoryName]) {
+          categoryHours[categoryName] = 0
+        }
+        categoryHours[categoryName] += log.hours || 0
+      })
+      
+      return Object.entries(categoryHours)
+        .map(([name, hours]) => ({ name, hours }))
+        .sort((a, b) => b.hours - a.hours)
+        .slice(0, 8)
+    })
+    
+    // 上週任務標題工時統計
+    const lastWeekTaskStats = computed(() => {
+      const lastWeek = getLastWeekRange()
+      const startDate = new Date(lastWeek.start)
+      const endDate = new Date(lastWeek.end + ' 23:59:59')
+      
+      const filteredWorkLogs = workLogs.value.filter(log => {
+        if (!log.work_date) return false
+        const workDate = new Date(log.work_date)
+        return workDate >= startDate && workDate <= endDate
+      })
+      
+      const taskHours = {}
+      
+      filteredWorkLogs.forEach(log => {
+        const taskTitle = log.task?.title || '未指定任務'
+        if (!taskHours[taskTitle]) {
+          taskHours[taskTitle] = 0
+        }
+        taskHours[taskTitle] += log.hours || 0
+      })
+      
+      return Object.entries(taskHours)
+        .map(([name, hours]) => ({ name, hours }))
+        .sort((a, b) => b.hours - a.hours)
+        .slice(0, 8)
+    })
+    
+    // 初始化上週類別工時圓餅圖
+    const initLastWeekCategoryChart = () => {
+      if (!lastWeekCategoryChartRef.value) return
+      
+      if (lastWeekCategoryChartInstance) {
+        lastWeekCategoryChartInstance.destroy()
+        lastWeekCategoryChartInstance = null
+      }
+      
+      if (lastWeekCategoryStats.value.length === 0) {
+        const ctx = lastWeekCategoryChartRef.value.getContext('2d')
+        ctx.clearRect(0, 0, lastWeekCategoryChartRef.value.width, lastWeekCategoryChartRef.value.height)
+        return
+      }
+      
+      const ctx = lastWeekCategoryChartRef.value.getContext('2d')
+      const totalHours = lastWeekCategoryStats.value.reduce((sum, item) => sum + item.hours, 0)
+      
+      lastWeekCategoryChartInstance = new ChartJS(ctx, {
+        type: 'pie',
+        data: {
+          labels: lastWeekCategoryStats.value.map(item => item.name || '未分類'),
+          datasets: [{
+            data: lastWeekCategoryStats.value.map(item => item.hours),
+            backgroundColor: lastWeekCategoryStats.value.map((_, index) => getCategoryColor(index)),
+            borderColor: '#ffffff',
+            borderWidth: 2,
+            hoverOffset: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: {
+                font: {
+                  size: 13
+                },
+                padding: 20,
+                generateLabels: (chart) => {
+                  const data = chart.data
+                  if (data.labels.length && data.datasets.length) {
+                    return data.labels.map((label, i) => {
+                      const hours = data.datasets[0].data[i]
+                      const percentage = totalHours > 0 ? ((hours / totalHours) * 100).toFixed(1) : '0.0'
+                      return {
+                        text: `${label} (${hours}h, ${percentage}%)`,
+                        fillStyle: data.datasets[0].backgroundColor[i],
+                        strokeStyle: data.datasets[0].borderColor,
+                        lineWidth: data.datasets[0].borderWidth,
+                        index: i
+                      }
+                    })
+                  }
+                  return []
+                }
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: (context) => {
+                  const label = context.label || ''
+                  const value = context.parsed
+                  const percentage = totalHours > 0 ? ((value / totalHours) * 100).toFixed(1) : '0.0'
+                  return `${label}: ${value}小時 (${percentage}%)`
+                }
+              }
+            }
+          }
+        }
+      })
+    }
+    
+    // 初始化上週任務標題工時圓餅圖
+    const initLastWeekTaskChart = () => {
+      if (!lastWeekTaskChartRef.value) return
+      
+      if (lastWeekTaskChartInstance) {
+        lastWeekTaskChartInstance.destroy()
+        lastWeekTaskChartInstance = null
+      }
+      
+      if (lastWeekTaskStats.value.length === 0) {
+        const ctx = lastWeekTaskChartRef.value.getContext('2d')
+        ctx.clearRect(0, 0, lastWeekTaskChartRef.value.width, lastWeekTaskChartRef.value.height)
+        return
+      }
+      
+      const ctx = lastWeekTaskChartRef.value.getContext('2d')
+      const totalHours = lastWeekTaskStats.value.reduce((sum, item) => sum + item.hours, 0)
+      
+      lastWeekTaskChartInstance = new ChartJS(ctx, {
+        type: 'pie',
+        data: {
+          labels: lastWeekTaskStats.value.map(item => item.name || '未指定任務'),
+          datasets: [{
+            data: lastWeekTaskStats.value.map(item => item.hours),
+            backgroundColor: lastWeekTaskStats.value.map((_, index) => getCategoryColor(index)),
+            borderColor: '#ffffff',
+            borderWidth: 2,
+            hoverOffset: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: {
+                font: {
+                  size: 13
+                },
+                padding: 20,
+                generateLabels: (chart) => {
+                  const data = chart.data
+                  if (data.labels.length && data.datasets.length) {
+                    return data.labels.map((label, i) => {
+                      const hours = data.datasets[0].data[i]
+                      const percentage = totalHours > 0 ? ((hours / totalHours) * 100).toFixed(1) : '0.0'
+                      return {
+                        text: `${label} (${hours}h, ${percentage}%)`,
+                        fillStyle: data.datasets[0].backgroundColor[i],
+                        strokeStyle: data.datasets[0].borderColor,
+                        lineWidth: data.datasets[0].borderWidth,
+                        index: i
+                      }
+                    })
+                  }
+                  return []
+                }
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: (context) => {
+                  const label = context.label || ''
+                  const value = context.parsed
+                  const percentage = totalHours > 0 ? ((value / totalHours) * 100).toFixed(1) : '0.0'
+                  return `${label}: ${value}小時 (${percentage}%)`
+                }
+              }
+            }
+          }
+        }
+      })
+    }
+    
     // 上週工作紀錄（按任務標題和案件編號群組）
     const lastWeekWorkLogs = computed(() => {
       const lastWeek = getLastWeekRange()
@@ -360,15 +597,12 @@ export default {
         return workDate >= startDate && workDate <= endDate
       })
       
-      // 先加上任務資訊
-      const logsWithTaskInfo = filteredWorkLogs.map(log => {
-        const task = tasks.value.find(t => t.id === log.task_id)
-        return {
-          ...log,
-          task_title: task?.title || '未指定任務',
-          case_number: task?.case_number || log.case_number || '-'
-        }
-      })
+      // 直接使用包含任務資訊的工作紀錄
+      const logsWithTaskInfo = filteredWorkLogs.map(log => ({
+        ...log,
+        task_title: log.task?.title || '未指定任務',
+        case_number: log.task?.case_number || log.case_number || '-'
+      }))
       
       // 按任務標題和案件編號進行群組
       const groupedLogs = {}
@@ -421,6 +655,13 @@ export default {
     
     const lastWeekRange = computed(() => {
       return lastWeekInfo.display
+    })
+    
+    const currentRangeDisplay = computed(() => {
+      if (dateRange.value && dateRange.value.length === 2) {
+        return `${dateRange.value[0]} ~ ${dateRange.value[1]}`
+      }
+      return '當月'
     })
     
     const formatDate = (date) => {
@@ -488,18 +729,27 @@ export default {
       if (workHoursChartInstance) {
         workHoursChartInstance.destroy()
       }
+      if (lastWeekCategoryChartInstance) {
+        lastWeekCategoryChartInstance.destroy()
+      }
+      if (lastWeekTaskChartInstance) {
+        lastWeekTaskChartInstance.destroy()
+      }
     })
     
     return {
       workHoursStats,
       lastWeekWorkLogs,
       lastWeekRange,
+      currentRangeDisplay,
       refreshData,
       handleDateRangeChange,
       getCategoryColor,
       formatDate,
       exportLastWeekData,
       workHoursChartRef,
+      lastWeekCategoryChartRef,
+      lastWeekTaskChartRef,
       dateRange,
       loading
     }

@@ -76,9 +76,15 @@ class WorkLog(db.Model):
         return {
             'id': self.id,
             'task_id': self.task_id,
-            'task_title': self.task.title if self.task else None,
-            'task_case_number': self.task.case_number if self.task else None,
-            'task_description': self.task.description if self.task else None,
+            'task': {
+                'id': self.task.id if self.task else None,
+                'case_number': self.task.case_number if self.task else None,
+                'category_name': self.task.category.name if self.task and self.task.category else None,
+                'title': self.task.title if self.task else None,
+                'description': self.task.description if self.task else None,
+                'status': self.task.status if self.task else None,
+                'priority': self.task.priority if self.task else None
+            } if self.task else None,
             'work_date': self.work_date.isoformat() if self.work_date else None,
             'hours': self.hours,
             'description': self.description,
