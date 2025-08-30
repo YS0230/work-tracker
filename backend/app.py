@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from models import db, Category, Task
+from models import db, Category, Task, WorkLog
 from datetime import datetime, date
 import os
 
@@ -212,6 +212,100 @@ def delete_task(task_id):
     db.session.commit()
     
     return jsonify({'message': 'Task deleted successfully'})
+
+# 工作紀錄 API
+@app.route('/api/work-logs', methods=['GET'])
+def get_work_logs():
+    query = WorkLog.query
+    
+    # 處理查詢參數
+    if request.args.get('work_date'):
+        work_date = datetime.strptime(request.args.get('work_date'), '%Y-%m-%d').date()
+        query = query.filter(WorkLog.work_date == work_date)
+    
+    if request.args.get('task_id'):
+        query = query.filter(WorkLog.task_id == request.args.get('task_id'))
+    
+    work_logs = query.order_by(WorkLog.work_date.desc()).all()
+    return jsonify([log.to_dict() for log in work_logs])
+
+@app.route('/api/work-logs', methods=['POST'])
+def create_work_log():
+    data = request.json
+    now = datetime.now()
+    
+    # 解析日期
+    work_date = datetime.strptime(data['work_date'], '%Y-%m-%d').date()
+    
+    work_log = WorkLog(
+        task_id=data['task_id'],
+        work_date=work_date,
+        hours=data['hours'],
+        description=data.get('description', ''),
+        completed=data.get('completed', False),
+        created_at=now,
+        updated_at=now
+    )
+    
+    db.session.add(work_log)
+    
+    # 如果標記為完成，更新任務狀態
+    if data.get('completed', False):
+        task = Task.query.get_or_404(data['task_id'])
+        task.status = 'completed'
+        task.updated_at = now
+    
+    db.session.commit()
+    
+    return jsonify(work_log.to_dict()), 201
+
+@app.route('/api/work-logs/<int:log_id>', methods=['PUT'])
+def update_work_log(log_id):
+    work_log = WorkLog.query.get_or_404(log_id)
+    data = request.json
+    now = datetime.now()
+    
+    # 儲存原始完成狀態
+    original_completed = work_log.completed
+    
+    # 更新欄位
+    if data.get('work_date'):
+        work_log.work_date = datetime.strptime(data['work_date'], '%Y-%m-%d').date()
+    
+    work_log.hours = data.get('hours', work_log.hours)
+    work_log.description = data.get('description', work_log.description)
+    work_log.completed = data.get('completed', work_log.completed)
+    work_log.updated_at = now
+    
+    # 如果完成狀態發生變化，更新任務狀態
+    if not original_completed and work_log.completed:
+        # 從未完成變為完成
+        task = Task.query.get_or_404(work_log.task_id)
+        task.status = 'completed'
+        task.updated_at = now
+    elif original_completed and not work_log.completed:
+        # 從完成變為未完成，將任務狀態改為進行中
+        task = Task.query.get_or_404(work_log.task_id)
+        task.status = 'in_progress'
+        task.updated_at = now
+    
+    db.session.commit()
+    
+    return jsonify(work_log.to_dict())
+
+@app.route('/api/work-logs/<int:log_id>', methods=['DELETE'])
+def delete_work_log(log_id):
+    work_log = WorkLog.query.get_or_404(log_id)
+    db.session.delete(work_log)
+    db.session.commit()
+    
+    return jsonify({'message': 'Work log deleted successfully'})
+
+# 取得未完成的任務（用於工作紀錄選擇）
+@app.route('/api/tasks/incomplete', methods=['GET'])
+def get_incomplete_tasks():
+    tasks = Task.query.filter(Task.status.in_(['pending', 'in_progress'])).order_by(Task.created_at.desc()).all()
+    return jsonify([task.to_dict() for task in tasks])
 
 if __name__ == '__main__':
     app.run(debug=True)

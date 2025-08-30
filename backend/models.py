@@ -40,6 +40,9 @@ class Task(db.Model):
     created_at = db.Column(db.DateTime, nullable=False)
     updated_at = db.Column(db.DateTime, nullable=False)
     
+    # 關聯到工作紀錄
+    work_logs = db.relationship('WorkLog', backref='task', lazy=True)
+    
     def to_dict(self):
         return {
             'id': self.id,
@@ -53,6 +56,32 @@ class Task(db.Model):
             'due_date': self.due_date.isoformat() if self.due_date else None,
             'status': self.status,
             'priority': self.priority,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+class WorkLog(db.Model):
+    __tablename__ = 'work_logs'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    task_id = db.Column(db.Integer, db.ForeignKey('tasks.id'), nullable=False)
+    work_date = db.Column(db.Date, nullable=False)
+    hours = db.Column(db.Float, nullable=False)
+    description = db.Column(db.Text)
+    completed = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, nullable=False)
+    updated_at = db.Column(db.DateTime, nullable=False)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'task_id': self.task_id,
+            'task_title': self.task.title if self.task else None,
+            'task_case_number': self.task.case_number if self.task else None,
+            'work_date': self.work_date.isoformat() if self.work_date else None,
+            'hours': self.hours,
+            'description': self.description,
+            'completed': self.completed,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }

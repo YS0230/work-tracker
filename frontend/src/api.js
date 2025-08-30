@@ -29,9 +29,27 @@ export const taskApi = {
     const url = queryString.toString() ? `/tasks?${queryString.toString()}` : '/tasks'
     return api.get(url)
   },
+  getIncomplete: () => api.get('/tasks/incomplete'),
   create: (data) => api.post('/tasks', data),
   update: (id, data) => api.put(`/tasks/${id}`, data),
   delete: (id) => api.delete(`/tasks/${id}`)
+}
+
+// 工作紀錄相關 API
+export const workLogApi = {
+  getAll: (params = {}) => {
+    const queryString = new URLSearchParams()
+    Object.keys(params).forEach(key => {
+      if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
+        queryString.append(key, params[key])
+      }
+    })
+    const url = queryString.toString() ? `/work-logs?${queryString.toString()}` : '/work-logs'
+    return api.get(url)
+  },
+  create: (data) => api.post('/work-logs', data),
+  update: (id, data) => api.put(`/work-logs/${id}`, data),
+  delete: (id) => api.delete(`/work-logs/${id}`)
 }
 
 export default api

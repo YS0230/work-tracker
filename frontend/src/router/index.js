@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import TaskList from '../views/TaskList.vue'
 import CategoryManagement from '../views/CategoryManagement.vue'
+import WorkLog from '../views/WorkLog.vue'
 
 const routes = [
   {
@@ -16,6 +17,11 @@ const routes = [
     path: '/categories',
     name: 'CategoryManagement',
     component: CategoryManagement
+  },
+  {
+    path: '/work-logs',
+    name: 'WorkLog',
+    component: WorkLog
   }
 ]
 

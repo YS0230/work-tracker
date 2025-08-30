@@ -14,6 +14,9 @@
           <el-menu-item index="/tasks">
             <span>任務管理</span>
           </el-menu-item>
+          <el-menu-item index="/work-logs">
+            <span>工作紀錄</span>
+          </el-menu-item>
           <el-menu-item index="/categories">
             <span>類別維護</span>
           </el-menu-item>
