@@ -19,7 +19,16 @@ export const categoryApi = {
 
 // 任務相關 API
 export const taskApi = {
-  getAll: () => api.get('/tasks'),
+  getAll: (params = {}) => {
+    const queryString = new URLSearchParams()
+    Object.keys(params).forEach(key => {
+      if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
+        queryString.append(key, params[key])
+      }
+    })
+    const url = queryString.toString() ? `/tasks?${queryString.toString()}` : '/tasks'
+    return api.get(url)
+  },
   create: (data) => api.post('/tasks', data),
   update: (id, data) => api.put(`/tasks/${id}`, data),
   delete: (id) => api.delete(`/tasks/${id}`)

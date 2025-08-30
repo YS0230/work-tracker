@@ -1,13 +1,153 @@
 <template>
   <div>
+    <!-- 篩選區域 -->
+    <el-card style="margin-bottom: 20px">
+      <template #header>
+        <div style="display: flex; justify-content: space-between; align-items: center">
+          <span>篩選條件</span>
+          <el-button @click="toggleFilters" circle size="small">
+            <el-icon>
+              <ArrowUp v-if="showFilters" />
+              <ArrowDown v-else />
+            </el-icon>
+          </el-button>
+        </div>
+      </template>
+      
+      <div v-show="showFilters">
+        <el-row :gutter="20">
+          <el-col :span="6">
+            <el-form-item label="案號">
+              <el-input v-model="filters.case_number" placeholder="請輸入案號" clearable />
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="案件類別">
+              <el-select v-model="filters.category_id" placeholder="請選擇類別" clearable>
+                <el-option
+                  v-for="category in categories"
+                  :key="category.id"
+                  :label="category.name"
+                  :value="category.id"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="表單名稱">
+              <el-input v-model="filters.form_name" placeholder="請輸入表單名稱" clearable />
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="任務標題">
+              <el-input v-model="filters.title" placeholder="請輸入任務標題" clearable />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-row :gutter="20">
+          <el-col :span="6">
+            <el-form-item label="描述">
+              <el-input v-model="filters.description" placeholder="請輸入描述" clearable />
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="聲請人">
+              <el-input v-model="filters.requester" placeholder="請輸入聲請人" clearable />
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="狀態">
+              <el-select v-model="filters.status" placeholder="請選擇狀態" clearable>
+                <el-option label="待處理" value="pending" />
+                <el-option label="進行中" value="in_progress" />
+                <el-option label="已完成" value="completed" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="優先級">
+              <el-select v-model="filters.priority" placeholder="請選擇優先級" clearable>
+                <el-option label="低" value="low" />
+                <el-option label="中" value="medium" />
+                <el-option label="高" value="high" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="截止日期">
+              <el-date-picker
+                v-model="filters.due_date_range"
+                type="daterange"
+                range-separator="至"
+                start-placeholder="開始日期"
+                end-placeholder="結束日期"
+                format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="建立時間">
+              <el-date-picker
+                v-model="filters.created_at_range"
+                type="datetimerange"
+                range-separator="至"
+                start-placeholder="開始時間"
+                end-placeholder="結束時間"
+                format="YYYY-MM-DD HH:mm:ss"
+                value-format="YYYY-MM-DD HH:mm:ss"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="異動時間">
+              <el-date-picker
+                v-model="filters.updated_at_range"
+                type="datetimerange"
+                range-separator="至"
+                start-placeholder="開始時間"
+                end-placeholder="結束時間"
+                format="YYYY-MM-DD HH:mm:ss"
+                value-format="YYYY-MM-DD HH:mm:ss"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-row>
+          <el-col :span="24" style="text-align: right">
+            <el-button @click="resetFilters">重置</el-button>
+            <el-button type="primary" @click="searchTasks">查詢</el-button>
+          </el-col>
+        </el-row>
+      </div>
+    </el-card>
+    
     <el-row style="margin-bottom: 20px">
-      <el-col :span="24">
+      <el-col :span="18">
+        <el-input
+          v-model="searchKeyword"
+          placeholder="輸入關鍵字搜索任務（案號、案件類別、表單名稱、標題、描述、聲請人）"
+          clearable
+          @input="handleSearch"
+        >
+          <template #prefix>
+            <el-icon><Search /></el-icon>
+          </template>
+        </el-input>
+      </el-col>
+      <el-col :span="6" style="text-align: right">
         <el-button type="primary" @click="showAddDialog = true">新增任務</el-button>
       </el-col>
     </el-row>
 
     <!-- 任務列表 -->
-    <el-table :data="tasks" border style="width: 100%">
+    <el-table :data="filteredTasks" border style="width: 100%">
+      <el-table-column type="index" label="流水號" width="80" :index="(index) => index + 1" />
       <el-table-column prop="case_number" label="案號" width="120" />
       <el-table-column prop="category_name" label="案件類別" width="120" />
       <el-table-column prop="form_name" label="表單名稱" width="150" />
@@ -121,18 +261,39 @@
 </template>
 
 <script>
-import { ref, onMounted, reactive } from 'vue'
+import { ref, onMounted, reactive, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Search, ArrowUp, ArrowDown } from '@element-plus/icons-vue'
 import { taskApi, categoryApi } from '../api'
 
 export default {
   name: 'TaskList',
+  components: {
+    Search,
+    ArrowUp,
+    ArrowDown
+  },
   setup() {
     const tasks = ref([])
     const categories = ref([])
     const showAddDialog = ref(false)
     const isEdit = ref(false)
     const taskFormRef = ref(null)
+    const searchKeyword = ref('')
+    const showFilters = ref(true)
+    const filters = ref({
+      case_number: '',
+      category_id: '',
+      form_name: '',
+      title: '',
+      description: '',
+      requester: '',
+      status: '',
+      priority: '',
+      due_date_range: [],
+      created_at_range: [],
+      updated_at_range: []
+    })
 
     const taskForm = reactive({
       id: null,
@@ -168,9 +329,9 @@ export default {
       })
     }
 
-    const loadTasks = async () => {
+    const loadTasks = async (queryParams = {}) => {
       try {
-        const response = await taskApi.getAll()
+        const response = await taskApi.getAll(queryParams)
         tasks.value = response.data
       } catch (error) {
         ElMessage.error('載入任務失敗')
@@ -276,6 +437,81 @@ export default {
       return new Date(dateTime).toLocaleString('zh-TW')
     }
 
+    const filteredTasks = computed(() => {
+      if (!searchKeyword.value) {
+        return tasks.value
+      }
+      
+      const keyword = searchKeyword.value.toLowerCase()
+      return tasks.value.filter(task => {
+        return (
+          task.case_number?.toLowerCase().includes(keyword) ||
+          task.category_name?.toLowerCase().includes(keyword) ||
+          task.form_name?.toLowerCase().includes(keyword) ||
+          task.title?.toLowerCase().includes(keyword) ||
+          task.description?.toLowerCase().includes(keyword) ||
+          task.requester?.toLowerCase().includes(keyword)
+        )
+      })
+    })
+
+    const handleSearch = () => {
+      // 搜索功能由 computed 屬性自動處理
+    }
+
+    const toggleFilters = () => {
+      showFilters.value = !showFilters.value
+    }
+
+    const searchTasks = async () => {
+      const queryParams = {}
+      
+      // 處理文字欄位
+      if (filters.value.case_number) queryParams.case_number = filters.value.case_number
+      if (filters.value.category_id) queryParams.category_id = filters.value.category_id
+      if (filters.value.form_name) queryParams.form_name = filters.value.form_name
+      if (filters.value.title) queryParams.title = filters.value.title
+      if (filters.value.description) queryParams.description = filters.value.description
+      if (filters.value.requester) queryParams.requester = filters.value.requester
+      if (filters.value.status) queryParams.status = filters.value.status
+      if (filters.value.priority) queryParams.priority = filters.value.priority
+      
+      // 處理日期範圍
+      if (filters.value.due_date_range && filters.value.due_date_range.length === 2) {
+        queryParams.due_date_start = filters.value.due_date_range[0]
+        queryParams.due_date_end = filters.value.due_date_range[1]
+      }
+      
+      if (filters.value.created_at_range && filters.value.created_at_range.length === 2) {
+        queryParams.created_at_start = filters.value.created_at_range[0]
+        queryParams.created_at_end = filters.value.created_at_range[1]
+      }
+      
+      if (filters.value.updated_at_range && filters.value.updated_at_range.length === 2) {
+        queryParams.updated_at_start = filters.value.updated_at_range[0]
+        queryParams.updated_at_end = filters.value.updated_at_range[1]
+      }
+      
+      await loadTasks(queryParams)
+    }
+
+    const resetFilters = () => {
+      filters.value = {
+        case_number: '',
+        category_id: '',
+        form_name: '',
+        title: '',
+        description: '',
+        requester: '',
+        status: '',
+        priority: '',
+        due_date_range: [],
+        created_at_range: [],
+        updated_at_range: []
+      }
+      loadTasks()
+    }
+
     onMounted(() => {
       loadTasks()
       loadCategories()
@@ -289,6 +525,13 @@ export default {
       taskForm,
       taskRules,
       taskFormRef,
+      searchKeyword,
+      filteredTasks,
+      showFilters,
+      filters,
+      toggleFilters,
+      searchTasks,
+      resetFilters,
       resetForm,
       submitTask,
       editTask,
@@ -297,7 +540,8 @@ export default {
       getStatusText,
       getPriorityType,
       getPriorityText,
-      formatDateTime
+      formatDateTime,
+      handleSearch
     }
   }
 }

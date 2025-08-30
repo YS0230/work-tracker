@@ -90,7 +90,61 @@ def delete_category(category_id):
 # 任務 API
 @app.route('/api/tasks', methods=['GET'])
 def get_tasks():
-    tasks = Task.query.order_by(Task.created_at.desc()).all()
+    query = Task.query
+    
+    # 處理查詢參數
+    if request.args.get('case_number'):
+        query = query.filter(Task.case_number.contains(request.args.get('case_number')))
+    
+    if request.args.get('category_id'):
+        query = query.filter(Task.category_id == request.args.get('category_id'))
+    
+    if request.args.get('form_name'):
+        query = query.filter(Task.form_name.contains(request.args.get('form_name')))
+    
+    if request.args.get('title'):
+        query = query.filter(Task.title.contains(request.args.get('title')))
+    
+    if request.args.get('description'):
+        query = query.filter(Task.description.contains(request.args.get('description')))
+    
+    if request.args.get('requester'):
+        query = query.filter(Task.requester.contains(request.args.get('requester')))
+    
+    if request.args.get('status'):
+        query = query.filter(Task.status == request.args.get('status'))
+    
+    if request.args.get('priority'):
+        query = query.filter(Task.priority == request.args.get('priority'))
+    
+    # 處理截止日期範圍
+    if request.args.get('due_date_start'):
+        due_date_start = datetime.strptime(request.args.get('due_date_start'), '%Y-%m-%d').date()
+        query = query.filter(Task.due_date >= due_date_start)
+    
+    if request.args.get('due_date_end'):
+        due_date_end = datetime.strptime(request.args.get('due_date_end'), '%Y-%m-%d').date()
+        query = query.filter(Task.due_date <= due_date_end)
+    
+    # 處理建立時間範圍
+    if request.args.get('created_at_start'):
+        created_at_start = datetime.strptime(request.args.get('created_at_start'), '%Y-%m-%d %H:%M:%S')
+        query = query.filter(Task.created_at >= created_at_start)
+    
+    if request.args.get('created_at_end'):
+        created_at_end = datetime.strptime(request.args.get('created_at_end'), '%Y-%m-%d %H:%M:%S')
+        query = query.filter(Task.created_at <= created_at_end)
+    
+    # 處理異動時間範圍
+    if request.args.get('updated_at_start'):
+        updated_at_start = datetime.strptime(request.args.get('updated_at_start'), '%Y-%m-%d %H:%M:%S')
+        query = query.filter(Task.updated_at >= updated_at_start)
+    
+    if request.args.get('updated_at_end'):
+        updated_at_end = datetime.strptime(request.args.get('updated_at_end'), '%Y-%m-%d %H:%M:%S')
+        query = query.filter(Task.updated_at <= updated_at_end)
+    
+    tasks = query.order_by(Task.created_at.desc()).all()
     return jsonify([task.to_dict() for task in tasks])
 
 @app.route('/api/tasks', methods=['POST'])
