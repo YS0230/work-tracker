@@ -1,55 +1,167 @@
 <template>
-  <div class="work-log">
-    <div class="header">
-      <h2>每日工作紀錄</h2>
-      <el-button type="primary" @click="showAddDialog = true">
-        <el-icon><Plus /></el-icon>
-        新增工作紀錄
-      </el-button>
-    </div>
-
+  <div>
     <!-- 篩選區域 -->
-    <div class="filter-section">
-      <el-form :model="filters" inline>
-        <el-form-item label="工作日期">
-          <el-date-picker
-            v-model="filters.work_date"
-            type="date"
-            placeholder="選擇日期"
-            format="YYYY-MM-DD"
-            value-format="YYYY-MM-DD"
-            @change="searchWorkLogs"
-          />
-        </el-form-item>
-        <el-form-item>
-          <el-button @click="resetFilters">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </div>
+    <el-card style="margin-bottom: 20px">
+      <template #header>
+        <div style="display: flex; justify-content: space-between; align-items: center">
+          <span>篩選條件</span>
+          <el-button @click="toggleFilters" circle size="small">
+            <el-icon>
+              <ArrowUp v-if="showFilters" />
+              <ArrowDown v-else />
+            </el-icon>
+          </el-button>
+        </div>
+      </template>
+      
+      <div v-show="showFilters">
+        <el-row :gutter="20">
+          <el-col :span="6">
+            <el-form-item label="工作日期">
+              <el-date-picker
+                v-model="filters.work_date"
+                type="date"
+                placeholder="選擇日期"
+                format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD"
+                @change="searchWorkLogs"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="案件編號">
+              <el-input v-model="filters.case_number" placeholder="請輸入案件編號" clearable />
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="任務標題">
+              <el-input v-model="filters.task_title" placeholder="請輸入任務標題" clearable />
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="完成狀態">
+              <el-select v-model="filters.completed" placeholder="請選擇狀態" clearable>
+                <el-option label="已完成" :value="true" />
+                <el-option label="未完成" :value="false" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="工作時數範圍">
+              <el-row :gutter="10">
+                <el-col :span="12">
+                  <el-input-number
+                    v-model="filters.hours_min"
+                    :min="0"
+                    :max="24"
+                    :step="0.5"
+                    :precision="1"
+                    placeholder="最小時數"
+                    style="width: 100%"
+                  />
+                </el-col>
+                <el-col :span="12">
+                  <el-input-number
+                    v-model="filters.hours_max"
+                    :min="0"
+                    :max="24"
+                    :step="0.5"
+                    :precision="1"
+                    placeholder="最大時數"
+                    style="width: 100%"
+                  />
+                </el-col>
+              </el-row>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="工作日期範圍">
+              <el-date-picker
+                v-model="filters.work_date_range"
+                type="daterange"
+                range-separator="至"
+                start-placeholder="開始日期"
+                end-placeholder="結束日期"
+                format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-row>
+          <el-col :span="24" style="text-align: right">
+            <el-button @click="resetFilters">重置</el-button>
+            <el-button type="primary" @click="searchWorkLogs">查詢</el-button>
+          </el-col>
+        </el-row>
+      </div>
+    </el-card>
+    
+    <el-row style="margin-bottom: 20px">
+      <el-col :span="18">
+        <el-input
+          v-model="searchKeyword"
+          placeholder="輸入關鍵字搜索工作紀錄（案件編號、任務標題、工作描述）"
+          clearable
+          @input="handleSearch"
+        >
+          <template #prefix>
+            <el-icon><Search /></el-icon>
+          </template>
+        </el-input>
+      </el-col>
+      <el-col :span="6" style="text-align: right">
+        <el-button @click="exportCSV" style="margin-right: 10px">
+          <el-icon><Download /></el-icon>
+          匯出CSV
+        </el-button>
+        <el-button type="primary" @click="showAddDialog = true">
+          <el-icon><Plus /></el-icon>
+          新增工作紀錄
+        </el-button>
+      </el-col>
+    </el-row>
 
     <!-- 工作紀錄列表 -->
-    <div class="table-section">
-      <el-table :data="workLogs" border stripe>
-        <el-table-column prop="work_date" label="工作日期" width="120" />
-        <el-table-column prop="task_case_number" label="案件編號" width="120" />
-        <el-table-column prop="task_title" label="任務標題" min-width="200" />
-        <el-table-column prop="hours" label="工時" width="80" />
-        <el-table-column prop="description" label="工作描述" min-width="200" />
-        <el-table-column prop="completed" label="完成狀態" width="100" align="center">
-          <template #default="scope">
-            <el-tag :type="scope.row.completed ? 'success' : 'warning'">
-              {{ scope.row.completed ? '已完成' : '未完成' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="120" fixed="right">
-          <template #default="scope">
-            <el-button size="small" @click="editWorkLog(scope.row)">編輯</el-button>
-            <el-button size="small" type="danger" @click="deleteWorkLog(scope.row.id)">刪除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </div>
+    <el-table :data="filteredWorkLogs" border style="width: 100%">
+      <el-table-column type="index" label="流水號" width="80" :index="(index) => index + 1" />
+      <el-table-column prop="work_date" label="工作日期" width="120" />
+      <el-table-column prop="task_case_number" label="案件編號" width="120" />
+      <el-table-column prop="task_title" label="任務標題" min-width="200" />
+      <el-table-column prop="hours" label="工時" width="80" />
+      <el-table-column prop="description" label="工作描述" min-width="200" show-overflow-tooltip />
+      <el-table-column prop="completed" label="完成狀態" width="100" align="center">
+        <template #default="scope">
+          <el-tag :type="scope.row.completed ? 'success' : 'warning'">
+            {{ scope.row.completed ? '已完成' : '未完成' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="created_at" label="建立時間" width="150">
+        <template #default="scope">
+          {{ formatDateTime(scope.row.created_at) }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="updated_at" label="異動時間" width="150">
+        <template #default="scope">
+          {{ formatDateTime(scope.row.updated_at) }}
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="100" fixed="right">
+        <template #default="scope">
+          <el-button size="small" @click="editWorkLog(scope.row)" circle>
+            <el-icon><Edit /></el-icon>
+          </el-button>
+          <el-button size="small" type="danger" @click="deleteWorkLog(scope.row.id)" circle>
+            <el-icon><Delete /></el-icon>
+          </el-button>
+        </template>
+      </el-table-column>
+    </el-table>
 
     <!-- 新增/編輯對話框 -->
     <el-dialog
@@ -123,9 +235,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { Search, ArrowUp, ArrowDown, Plus, Edit, Delete, Download } from '@element-plus/icons-vue'
 import { workLogApi, taskApi } from '@/api'
 
 // 響應式數據
@@ -134,10 +246,18 @@ const incompleteTasks = ref([])
 const showAddDialog = ref(false)
 const isEditing = ref(false)
 const workLogFormRef = ref()
+const searchKeyword = ref('')
+const showFilters = ref(true)
 
 // 篩選條件
 const filters = reactive({
-  work_date: new Date().toISOString().slice(0, 10) // 預設今天
+  work_date: new Date().toISOString().slice(0, 10), // 預設今天
+  case_number: '',
+  task_title: '',
+  completed: null,
+  hours_min: null,
+  hours_max: null,
+  work_date_range: []
 })
 
 // 表單數據
@@ -172,8 +292,17 @@ const loadWorkLogs = async () => {
 const searchWorkLogs = async () => {
   try {
     const params = {}
+    
+    // 處理單一日期篩選
     if (filters.work_date) {
       params.work_date = filters.work_date
+    }
+    
+    // 處理日期範圍篩選（如果有範圍則優先使用範圍）
+    if (filters.work_date_range && filters.work_date_range.length === 2) {
+      params.work_date_start = filters.work_date_range[0]
+      params.work_date_end = filters.work_date_range[1]
+      delete params.work_date // 移除單一日期參數
     }
     
     const response = await workLogApi.getAll(params)
@@ -197,8 +326,74 @@ const loadIncompleteTasks = async () => {
 
 // 重置篩選條件
 const resetFilters = () => {
-  filters.work_date = ''
+  Object.assign(filters, {
+    work_date: '',
+    case_number: '',
+    task_title: '',
+    completed: null,
+    hours_min: null,
+    hours_max: null,
+    work_date_range: []
+  })
   searchWorkLogs()
+}
+
+// 切換篩選區域顯示狀態
+const toggleFilters = () => {
+  showFilters.value = !showFilters.value
+}
+
+// 關鍵字搜尋的計算屬性
+const filteredWorkLogs = computed(() => {
+  let result = workLogs.value
+  
+  // 關鍵字搜尋
+  if (searchKeyword.value) {
+    const keyword = searchKeyword.value.toLowerCase()
+    result = result.filter(log => {
+      return (
+        log.task_case_number?.toLowerCase().includes(keyword) ||
+        log.task_title?.toLowerCase().includes(keyword) ||
+        log.description?.toLowerCase().includes(keyword)
+      )
+    })
+  }
+  
+  // 案件編號篩選
+  if (filters.case_number) {
+    const caseNumber = filters.case_number.toLowerCase()
+    result = result.filter(log => 
+      log.task_case_number?.toLowerCase().includes(caseNumber)
+    )
+  }
+  
+  // 任務標題篩選
+  if (filters.task_title) {
+    const taskTitle = filters.task_title.toLowerCase()
+    result = result.filter(log => 
+      log.task_title?.toLowerCase().includes(taskTitle)
+    )
+  }
+  
+  // 完成狀態篩選
+  if (filters.completed !== null) {
+    result = result.filter(log => log.completed === filters.completed)
+  }
+  
+  // 工時範圍篩選
+  if (filters.hours_min !== null) {
+    result = result.filter(log => log.hours >= filters.hours_min)
+  }
+  if (filters.hours_max !== null) {
+    result = result.filter(log => log.hours <= filters.hours_max)
+  }
+  
+  return result
+})
+
+// 處理搜尋輸入
+const handleSearch = () => {
+  // 搜索功能由 computed 屬性自動處理
 }
 
 // 編輯工作紀錄
@@ -269,41 +464,80 @@ const resetForm = () => {
   isEditing.value = false
 }
 
+// 格式化日期時間
+const formatDateTime = (dateTime) => {
+  if (!dateTime) return ''
+  return new Date(dateTime).toLocaleString('zh-TW')
+}
+
+// CSV 匯出功能
+const exportCSV = () => {
+  if (filteredWorkLogs.value.length === 0) {
+    ElMessage.warning('沒有資料可以匯出')
+    return
+  }
+
+  // CSV 標頭
+  const headers = [
+    '流水號',
+    '工作日期',
+    '案件編號',
+    '任務標題',
+    '工時',
+    '工作描述',
+    '完成狀態',
+    '建立時間',
+    '異動時間'
+  ]
+
+  // 轉換資料
+  const csvData = filteredWorkLogs.value.map((log, index) => [
+    index + 1,
+    log.work_date || '',
+    log.task_case_number || '',
+    log.task_title || '',
+    log.hours || '',
+    log.description || '',
+    log.completed ? '已完成' : '未完成',
+    formatDateTime(log.created_at),
+    formatDateTime(log.updated_at)
+  ])
+
+  // 建立 CSV 內容
+  const csvContent = [headers, ...csvData]
+    .map(row => row.map(field => `"${field}"`).join(','))
+    .join('\n')
+
+  // 加上 BOM 以支持中文
+  const BOM = '\uFEFF'
+  const csvWithBOM = BOM + csvContent
+
+  // 建立並下載檔案
+  const blob = new Blob([csvWithBOM], { type: 'text/csv;charset=utf-8;' })
+  const link = document.createElement('a')
+  const url = URL.createObjectURL(blob)
+  link.setAttribute('href', url)
+  
+  const now = new Date()
+  const timestamp = now.toISOString().slice(0, 19).replace(/:/g, '-')
+  link.setAttribute('download', `工作紀錄_${timestamp}.csv`)
+  
+  link.style.visibility = 'hidden'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  
+  ElMessage.success(`已匯出 ${filteredWorkLogs.value.length} 筆資料`)
+}
+
 // 初始化
 onMounted(async () => {
   await searchWorkLogs() // 使用搜尋功能，預設載入今天的紀錄
   await loadIncompleteTasks()
 })
 
-// 監聽對話框關閉
-const handleDialogClose = () => {
-  resetForm()
-  workLogFormRef.value?.clearValidate()
-}
 </script>
 
 <style scoped>
-.work-log {
-  padding: 20px;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.filter-section {
-  background: #f5f5f5;
-  padding: 20px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-}
-
-.table-section {
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
-}
+/* 樣式與 TaskList 保持一致 */
 </style>

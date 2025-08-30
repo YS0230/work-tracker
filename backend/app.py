@@ -223,6 +223,15 @@ def get_work_logs():
         work_date = datetime.strptime(request.args.get('work_date'), '%Y-%m-%d').date()
         query = query.filter(WorkLog.work_date == work_date)
     
+    # 處理工作日期範圍
+    if request.args.get('work_date_start'):
+        work_date_start = datetime.strptime(request.args.get('work_date_start'), '%Y-%m-%d').date()
+        query = query.filter(WorkLog.work_date >= work_date_start)
+    
+    if request.args.get('work_date_end'):
+        work_date_end = datetime.strptime(request.args.get('work_date_end'), '%Y-%m-%d').date()
+        query = query.filter(WorkLog.work_date <= work_date_end)
+    
     if request.args.get('task_id'):
         query = query.filter(WorkLog.task_id == request.args.get('task_id'))
     
