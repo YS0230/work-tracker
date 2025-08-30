@@ -17,18 +17,6 @@
       <div v-show="showFilters">
         <el-row :gutter="20">
           <el-col :span="6">
-            <el-form-item label="工作日期">
-              <el-date-picker
-                v-model="filters.work_date"
-                type="date"
-                placeholder="選擇日期"
-                format="YYYY-MM-DD"
-                value-format="YYYY-MM-DD"
-                @change="searchWorkLogs"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="6">
             <el-form-item label="案件編號">
               <el-input v-model="filters.case_number" placeholder="請輸入案件編號" clearable />
             </el-form-item>
@@ -44,6 +32,21 @@
                 <el-option label="已完成" :value="true" />
                 <el-option label="未完成" :value="false" />
               </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="工作日期範圍">
+              <el-date-picker
+                v-model="filters.work_date_range"
+                type="daterange"
+                range-separator="至"
+                start-placeholder="開始日期"
+                end-placeholder="結束日期"
+                format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD"
+                @change="searchWorkLogs"
+                style="width: 100%"
+              />
             </el-form-item>
           </el-col>
         </el-row>
@@ -75,19 +78,6 @@
                   />
                 </el-col>
               </el-row>
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="工作日期範圍">
-              <el-date-picker
-                v-model="filters.work_date_range"
-                type="daterange"
-                range-separator="至"
-                start-placeholder="開始日期"
-                end-placeholder="結束日期"
-                format="YYYY-MM-DD"
-                value-format="YYYY-MM-DD"
-              />
             </el-form-item>
           </el-col>
         </el-row>
@@ -270,15 +260,30 @@ const workLogFormRef = ref()
 const searchKeyword = ref('')
 const showFilters = ref(true)
 
+// 獲取本週起訖日期的函數
+const getCurrentWeekRange = () => {
+  const now = new Date()
+  const dayOfWeek = now.getDay() // 0 = Sunday, 1 = Monday, ...
+  const monday = new Date(now)
+  monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
+  
+  const sunday = new Date(monday)
+  sunday.setDate(monday.getDate() + 6)
+  
+  return [
+    monday.toISOString().slice(0, 10),
+    sunday.toISOString().slice(0, 10)
+  ]
+}
+
 // 篩選條件
 const filters = reactive({
-  work_date: new Date().toISOString().slice(0, 10), // 預設今天
   case_number: '',
   task_title: '',
   completed: null,
   hours_min: null,
   hours_max: null,
-  work_date_range: []
+  work_date_range: getCurrentWeekRange() // 預設當週
 })
 
 // 表單數據
@@ -314,16 +319,10 @@ const searchWorkLogs = async () => {
   try {
     const params = {}
     
-    // 處理單一日期篩選
-    if (filters.work_date) {
-      params.work_date = filters.work_date
-    }
-    
-    // 處理日期範圍篩選（如果有範圍則優先使用範圍）
+    // 處理日期範圍篩選
     if (filters.work_date_range && filters.work_date_range.length === 2) {
       params.start_date = filters.work_date_range[0]
       params.end_date = filters.work_date_range[1]
-      delete params.work_date // 移除單一日期參數
     }
     
     const response = await workLogApi.getAll(params)
@@ -348,13 +347,12 @@ const loadIncompleteTasks = async () => {
 // 重置篩選條件
 const resetFilters = () => {
   Object.assign(filters, {
-    work_date: '',
     case_number: '',
     task_title: '',
     completed: null,
     hours_min: null,
     hours_max: null,
-    work_date_range: []
+    work_date_range: getCurrentWeekRange()
   })
   searchWorkLogs()
 }
@@ -560,7 +558,7 @@ const exportCSV = () => {
 
 // 初始化
 onMounted(async () => {
-  await searchWorkLogs() // 使用搜尋功能，預設載入今天的紀錄
+  await searchWorkLogs() // 使用搜尋功能，預設載入當週的紀錄
   await loadIncompleteTasks()
 })
 
