@@ -45,5 +45,21 @@ export default {
 
 body {
   font-family: 'Microsoft JhengHei', sans-serif;
+  font-size: 13px;
+}
+
+.el-table {
+  font-size: 13px;
+}
+
+.el-form-item__label {
+  font-size: 13px;
+}
+
+.el-input__inner,
+.el-textarea__inner,
+.el-select .el-input__inner,
+.el-date-editor.el-input {
+  font-size: 13px;
 }
 </style>
