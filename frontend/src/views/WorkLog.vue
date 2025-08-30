@@ -180,9 +180,14 @@
             <el-option
               v-for="task in incompleteTasks"
               :key="task.id"
-              :label="`${task.case_number} - ${task.title}`"
+              :label="`${task.category_name} - ${task.form_name} - ${task.title}`"
               :value="task.id"
-            />
+            >
+              <div style="display: flex; flex-direction: column;">
+                <span style="font-weight: bold;">{{ task.category_name }} - {{ task.form_name }} - {{ task.title }}</span>
+                <span style="font-size: 12px; color: #999; margin-top: 2px;">{{ task.description }}</span>
+              </div>
+            </el-option>
           </el-select>
         </el-form-item>
         
