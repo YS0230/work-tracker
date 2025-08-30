@@ -100,7 +100,7 @@
           <template #header>
             <div style="display: flex; justify-content: space-between; align-items: center">
               <span>類別任務分布</span>
-              <el-icon><Pie /></el-icon>
+              <el-icon><PieChart /></el-icon>
             </div>
           </template>
           
@@ -238,7 +238,7 @@
 import { ref, onMounted, computed, nextTick, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { 
-  Clock, Loading, CircleCheck, List, Pie, 
+  Clock, Loading, CircleCheck, List, PieChart, 
   Warning, SuccessFilled, DocumentAdd, Refresh, Search
 } from '@element-plus/icons-vue'
 import { taskApi, categoryApi } from '../api'
@@ -257,7 +257,7 @@ ChartJS.register(Title, Tooltip, Legend, ArcElement, DoughnutController, PieCont
 export default {
   name: 'TaskDashboard',
   components: {
-    Clock, Loading, CircleCheck, List, Pie,
+    Clock, Loading, CircleCheck, List, PieChart,
     Warning, SuccessFilled, DocumentAdd, Refresh, Search
   },
   setup() {

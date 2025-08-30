@@ -59,7 +59,7 @@
           <template #header>
             <div style="display: flex; justify-content: space-between; align-items: center">
               <span>上週類別工時分布</span>
-              <el-icon><Pie /></el-icon>
+              <el-icon><PieChart /></el-icon>
             </div>
           </template>
           
@@ -75,7 +75,7 @@
           <template #header>
             <div style="display: flex; justify-content: space-between; align-items: center">
               <span>上週任務標題工時分布</span>
-              <el-icon><Pie /></el-icon>
+              <el-icon><PieChart /></el-icon>
             </div>
           </template>
           
@@ -127,7 +127,7 @@
           <template #header>
             <div style="display: flex; justify-content: space-between; align-items: center">
               <span>類別工時分布 ({{ currentRangeDisplay }})</span>
-              <el-icon><Pie /></el-icon>
+              <el-icon><PieChart /></el-icon>
             </div>
           </template>
           
@@ -146,7 +146,7 @@
 import { ref, onMounted, computed, nextTick, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { 
-  Pie, Refresh, Search, Document, DocumentAdd, Download
+  PieChart, Refresh, Search, Document, DocumentAdd, Download
 } from '@element-plus/icons-vue'
 import { workLogApi } from '../api'
 import {
@@ -164,7 +164,7 @@ ChartJS.register(Title, Tooltip, Legend, ArcElement, DoughnutController, PieCont
 export default {
   name: 'WorkDashboard',
   components: {
-    Pie, Refresh, Search, Document, DocumentAdd, Download
+    PieChart, Refresh, Search, Document, DocumentAdd, Download
   },
   setup() {
     const workLogs = ref([])
