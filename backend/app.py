@@ -112,7 +112,12 @@ def get_tasks():
         query = query.filter(Task.requester.contains(request.args.get('requester')))
     
     if request.args.get('status'):
-        query = query.filter(Task.status == request.args.get('status'))
+        status_param = request.args.get('status')
+        if ',' in status_param:
+            status_list = [s.strip() for s in status_param.split(',')]
+            query = query.filter(Task.status.in_(status_list))
+        else:
+            query = query.filter(Task.status == status_param)
     
     if request.args.get('priority'):
         query = query.filter(Task.priority == request.args.get('priority'))

@@ -58,7 +58,7 @@
           </el-col>
           <el-col :span="6">
             <el-form-item label="狀態">
-              <el-select v-model="filters.status" placeholder="請選擇狀態" clearable>
+              <el-select v-model="filters.status" placeholder="請選擇狀態" clearable multiple>
                 <el-option label="待處理" value="pending" />
                 <el-option label="進行中" value="in_progress" />
                 <el-option label="已完成" value="completed" />
@@ -296,19 +296,44 @@ export default {
     const taskFormRef = ref(null)
     const searchKeyword = ref('')
     const showFilters = ref(true)
-    const filters = ref({
-      case_number: '',
-      category_id: '',
-      form_name: '',
-      title: '',
-      description: '',
-      requester: '',
-      status: '',
-      priority: '',
-      due_date_range: [],
-      created_at_range: [],
-      updated_at_range: []
-    })
+    const getDefaultFilters = () => {
+      const now = new Date()
+      const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
+      
+      // 設定時間範圍：一個月前的 00:00:00 到今天的 23:59:59 (本地時區)
+      const startDate = new Date(oneMonthAgo.getFullYear(), oneMonthAgo.getMonth(), oneMonthAgo.getDate(), 0, 0, 0)
+      const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
+      
+      // 格式化為本地時間字串 YYYY-MM-DD HH:mm:ss
+      const formatLocalDateTime = (date) => {
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        const hours = String(date.getHours()).padStart(2, '0')
+        const minutes = String(date.getMinutes()).padStart(2, '0')
+        const seconds = String(date.getSeconds()).padStart(2, '0')
+        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+      }
+      
+      return {
+        case_number: '',
+        category_id: '',
+        form_name: '',
+        title: '',
+        description: '',
+        requester: '',
+        status: ['pending', 'in_progress'],
+        priority: '',
+        due_date_range: [],
+        created_at_range: [
+          formatLocalDateTime(startDate),
+          formatLocalDateTime(endDate)
+        ],
+        updated_at_range: []
+      }
+    }
+
+    const filters = ref(getDefaultFilters())
 
     const taskForm = reactive({
       id: null,
@@ -488,7 +513,16 @@ export default {
       if (filters.value.title) queryParams.title = filters.value.title
       if (filters.value.description) queryParams.description = filters.value.description
       if (filters.value.requester) queryParams.requester = filters.value.requester
-      if (filters.value.status) queryParams.status = filters.value.status
+      
+      // 處理狀態 - 支援陣列或單一值
+      if (filters.value.status && filters.value.status.length > 0) {
+        if (Array.isArray(filters.value.status)) {
+          queryParams.status = filters.value.status.join(',')
+        } else {
+          queryParams.status = filters.value.status
+        }
+      }
+      
       if (filters.value.priority) queryParams.priority = filters.value.priority
       
       // 處理日期範圍
@@ -518,7 +552,7 @@ export default {
         title: '',
         description: '',
         requester: '',
-        status: '',
+        status: [],
         priority: '',
         due_date_range: [],
         created_at_range: [],
@@ -592,9 +626,9 @@ export default {
       ElMessage.success(`已匯出 ${filteredTasks.value.length} 筆資料`)
     }
 
-    onMounted(() => {
-      loadTasks()
-      loadCategories()
+    onMounted(async () => {
+      await loadCategories()
+      await searchTasks()
     })
 
     return {
