@@ -34,46 +34,54 @@
       </el-col>
     </el-row>
 
-    <!-- 工作時數總覽卡片區域 -->
+
+    <!-- 上週工作資訊 -->
     <el-row :gutter="20" style="margin-bottom: 20px">
-      <el-col :span="8">
-        <el-card class="status-card work-hours">
-          <div class="card-content">
-            <div class="card-icon">
-              <el-icon size="32"><Timer /></el-icon>
+      <el-col :span="24">
+        <el-card>
+          <template #header>
+            <div style="display: flex; justify-content: space-between; align-items: center">
+              <span>上週工作資訊 ({{ lastWeekRange }})</span>
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <el-button @click="exportLastWeekData" size="small" type="success">
+                  <el-icon><Download /></el-icon>
+                  匯出 CSV
+                </el-button>
+                <el-icon><Document /></el-icon>
+              </div>
             </div>
-            <div class="card-info">
-              <div class="card-number">{{ workStats.totalHours }}</div>
-              <div class="card-label">總工作時數</div>
-            </div>
+          </template>
+          
+          <div v-if="lastWeekWorkLogs.length === 0" class="empty-state">
+            <el-icon size="48"><DocumentAdd /></el-icon>
+            <p>上週暫無工作紀錄</p>
           </div>
-        </el-card>
-      </el-col>
-      
-      <el-col :span="8">
-        <el-card class="status-card work-logs">
-          <div class="card-content">
-            <div class="card-icon">
-              <el-icon size="32"><Document /></el-icon>
-            </div>
-            <div class="card-info">
-              <div class="card-number">{{ workStats.totalLogs }}</div>
-              <div class="card-label">工作紀錄數</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      
-      <el-col :span="8">
-        <el-card class="status-card avg-hours">
-          <div class="card-content">
-            <div class="card-icon">
-              <el-icon size="32"><TrendCharts /></el-icon>
-            </div>
-            <div class="card-info">
-              <div class="card-number">{{ workStats.avgDailyHours }}</div>
-              <div class="card-label">平均日工時</div>
-            </div>
+          
+          <div v-else>
+            <el-table :data="lastWeekWorkLogs" style="width: 100%">
+              <el-table-column prop="case_number" label="案件編號" width="120">
+                <template #default="scope">
+                  {{ scope.row.case_number }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="task_title" label="任務標題" min-width="200">
+                <template #default="scope">
+                  {{ scope.row.task_title }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="work_detail" label="工作明細" min-width="400">
+                <template #default="scope">
+                  <div style="line-height: 1.5; word-wrap: break-word; white-space: pre-wrap;">
+                    {{ scope.row.work_detail }}
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column prop="total_hours" label="總工時" width="80" align="center">
+                <template #default="scope">
+                  <el-tag type="primary" size="small">{{ scope.row.total_hours }}h</el-tag>
+                </template>
+              </el-table-column>
+            </el-table>
           </div>
         </el-card>
       </el-col>
@@ -97,106 +105,7 @@
       </el-col>
     </el-row>
 
-    <!-- 最近工作紀錄 -->
-    <el-row :gutter="20" style="margin-bottom: 20px">
-      <el-col :span="24">
-        <el-card>
-          <template #header>
-            <div style="display: flex; justify-content: space-between; align-items: center">
-              <span>最近工作紀錄</span>
-              <el-icon><Clock /></el-icon>
-            </div>
-          </template>
-          
-          <div v-if="recentWorkLogs.length === 0" class="empty-state">
-            <el-icon size="48"><DocumentAdd /></el-icon>
-            <p>暫無工作紀錄</p>
-          </div>
-          
-          <div v-else>
-            <el-table :data="recentWorkLogs.slice(0, 10)" style="width: 100%">
-              <el-table-column prop="work_date" label="工作日期" width="120">
-                <template #default="scope">
-                  {{ formatDate(scope.row.work_date) }}
-                </template>
-              </el-table-column>
-              <el-table-column prop="task_title" label="任務" min-width="200">
-                <template #default="scope">
-                  <div>
-                    <div style="font-weight: 500;">{{ scope.row.task_title || '未指定任務' }}</div>
-                    <div style="font-size: 12px; color: #606266;">
-                      {{ scope.row.category_name || '未分類' }}
-                    </div>
-                  </div>
-                </template>
-              </el-table-column>
-              <el-table-column prop="description" label="工作內容" min-width="250">
-                <template #default="scope">
-                  <div style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                    {{ scope.row.description || '-' }}
-                  </div>
-                </template>
-              </el-table-column>
-              <el-table-column prop="hours" label="工時" width="80" align="center">
-                <template #default="scope">
-                  <el-tag type="primary" size="small">{{ scope.row.hours }}h</el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column prop="created_at" label="建立時間" width="150">
-                <template #default="scope">
-                  {{ formatDateTime(scope.row.created_at) }}
-                </template>
-              </el-table-column>
-            </el-table>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
 
-    <!-- 工作統計 -->
-    <el-row :gutter="20">
-      <el-col :span="24">
-        <el-card>
-          <template #header>
-            <div style="display: flex; justify-content: space-between; align-items: center">
-              <span>{{ dateRangeTitle }}</span>
-              <div>
-                <el-button @click="refreshData" size="small" circle>
-                  <el-icon><Refresh /></el-icon>
-                </el-button>
-              </div>
-            </div>
-          </template>
-          
-          <el-row :gutter="20">
-            <el-col :span="6">
-              <div class="month-stat-item">
-                <div class="stat-number">{{ monthlyStats.totalWorkLogs }}</div>
-                <div class="stat-label">工作紀錄</div>
-              </div>
-            </el-col>
-            <el-col :span="6">
-              <div class="month-stat-item">
-                <div class="stat-number">{{ monthlyStats.totalHours }}</div>
-                <div class="stat-label">總工時</div>
-              </div>
-            </el-col>
-            <el-col :span="6">
-              <div class="month-stat-item">
-                <div class="stat-number">{{ monthlyStats.avgDailyHours }}</div>
-                <div class="stat-label">平均日工時</div>
-              </div>
-            </el-col>
-            <el-col :span="6">
-              <div class="month-stat-item">
-                <div class="stat-number">{{ monthlyStats.workingDays }}</div>
-                <div class="stat-label">工作天數</div>
-              </div>
-            </el-col>
-          </el-row>
-        </el-card>
-      </el-col>
-    </el-row>
   </div>
 </template>
 
@@ -204,8 +113,7 @@
 import { ref, onMounted, computed, nextTick, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { 
-  Timer, Document, TrendCharts, Pie, Clock,
-  DocumentAdd, Refresh, Search
+  Pie, Refresh, Search, Document, DocumentAdd, Download
 } from '@element-plus/icons-vue'
 import { workLogApi, taskApi } from '../api'
 import {
@@ -223,13 +131,38 @@ ChartJS.register(Title, Tooltip, Legend, ArcElement, DoughnutController, PieCont
 export default {
   name: 'WorkDashboard',
   components: {
-    Timer, Document, TrendCharts, Pie, Clock,
-    DocumentAdd, Refresh, Search
+    Pie, Refresh, Search, Document, DocumentAdd, Download
   },
   setup() {
     const workLogs = ref([])
     const tasks = ref([])
     const workHoursChartRef = ref(null)
+    
+    // 獲取上週日期範圍
+    const getLastWeekRange = () => {
+      const now = new Date()
+      const currentDay = now.getDay() // 0 = Sunday, 1 = Monday, ...
+      const daysToLastSunday = currentDay === 0 ? 7 : currentDay
+      
+      const lastWeekEnd = new Date(now)
+      lastWeekEnd.setDate(now.getDate() - daysToLastSunday)
+      
+      const lastWeekStart = new Date(lastWeekEnd)
+      lastWeekStart.setDate(lastWeekEnd.getDate() - 6)
+      
+      const formatDate = (date) => {
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        return `${year}-${month}-${day}`
+      }
+      
+      return {
+        start: formatDate(lastWeekStart),
+        end: formatDate(lastWeekEnd),
+        display: `${formatDate(lastWeekStart)} ~ ${formatDate(lastWeekEnd)}`
+      }
+    }
     
     // 預設當月日期範圍
     const getCurrentMonthRange = () => {
@@ -253,37 +186,8 @@ export default {
     const dateRange = ref(getCurrentMonthRange())
     const loading = ref(false)
     let workHoursChartInstance = null
+    const lastWeekInfo = getLastWeekRange()
     
-    const workStats = computed(() => {
-      let filteredWorkLogs = workLogs.value
-      
-      // 如果有設定日期範圍，按工作日期過濾
-      if (dateRange.value && dateRange.value.length === 2) {
-        const startDate = new Date(dateRange.value[0])
-        const endDate = new Date(dateRange.value[1] + ' 23:59:59')
-        
-        filteredWorkLogs = workLogs.value.filter(log => {
-          if (!log.work_date) return false
-          const workDate = new Date(log.work_date)
-          return workDate >= startDate && workDate <= endDate
-        })
-      }
-      
-      const totalHours = filteredWorkLogs.reduce((sum, log) => sum + (log.hours || 0), 0)
-      const totalLogs = filteredWorkLogs.length
-      
-      // 計算工作天數
-      const workDates = new Set(filteredWorkLogs.map(log => log.work_date))
-      const workingDays = workDates.size
-      
-      const avgDailyHours = workingDays > 0 ? (totalHours / workingDays).toFixed(1) : '0.0'
-      
-      return {
-        totalHours: totalHours.toFixed(1),
-        totalLogs,
-        avgDailyHours
-      }
-    })
     
     const workHoursStats = computed(() => {
       let filteredWorkLogs = workLogs.value
@@ -317,67 +221,7 @@ export default {
         .slice(0, 8)
     })
     
-    const recentWorkLogs = computed(() => {
-      let filteredWorkLogs = workLogs.value
-      
-      // 如果有設定日期範圍，按工作日期過濾
-      if (dateRange.value && dateRange.value.length === 2) {
-        const startDate = new Date(dateRange.value[0])
-        const endDate = new Date(dateRange.value[1] + ' 23:59:59')
-        
-        filteredWorkLogs = workLogs.value.filter(log => {
-          if (!log.work_date) return false
-          const workDate = new Date(log.work_date)
-          return workDate >= startDate && workDate <= endDate
-        })
-      }
-      
-      return filteredWorkLogs
-        .map(log => {
-          const task = tasks.value.find(t => t.id === log.task_id)
-          return {
-            ...log,
-            task_title: task?.title,
-            category_name: task?.category_name
-          }
-        })
-        .sort((a, b) => new Date(b.work_date) - new Date(a.work_date))
-    })
     
-    const monthlyStats = computed(() => {
-      let startDate, endDate
-      
-      if (dateRange.value && dateRange.value.length === 2) {
-        startDate = new Date(dateRange.value[0])
-        endDate = new Date(dateRange.value[1] + ' 23:59:59')
-      } else {
-        const now = new Date()
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1)
-        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
-      }
-      
-      const filteredWorkLogs = workLogs.value.filter(log => {
-        if (!log.work_date) return false
-        const workDate = new Date(log.work_date)
-        return workDate >= startDate && workDate <= endDate
-      })
-      
-      const totalWorkLogs = filteredWorkLogs.length
-      const totalHours = filteredWorkLogs.reduce((sum, log) => sum + (log.hours || 0), 0)
-      
-      // 計算工作天數
-      const workDates = new Set(filteredWorkLogs.map(log => log.work_date))
-      const workingDays = workDates.size
-      
-      const avgDailyHours = workingDays > 0 ? (totalHours / workingDays).toFixed(1) : '0.0'
-      
-      return {
-        totalWorkLogs,
-        totalHours: totalHours.toFixed(1),
-        avgDailyHours,
-        workingDays
-      }
-    })
     
     const loadWorkLogs = async (startDate = null, endDate = null) => {
       try {
@@ -425,12 +269,6 @@ export default {
       }
     }
     
-    const dateRangeTitle = computed(() => {
-      if (dateRange.value && dateRange.value.length === 2) {
-        return `${dateRange.value[0]} ~ ${dateRange.value[1]} 工作統計`
-      }
-      return '本月工作統計'
-    })
     
     const initWorkHoursChart = () => {
       if (!workHoursChartRef.value) return
@@ -510,15 +348,137 @@ export default {
       return colors[index % colors.length]
     }
     
+    // 上週工作紀錄（按任務標題和案件編號群組）
+    const lastWeekWorkLogs = computed(() => {
+      const lastWeek = getLastWeekRange()
+      const startDate = new Date(lastWeek.start)
+      const endDate = new Date(lastWeek.end + ' 23:59:59')
+      
+      const filteredWorkLogs = workLogs.value.filter(log => {
+        if (!log.work_date) return false
+        const workDate = new Date(log.work_date)
+        return workDate >= startDate && workDate <= endDate
+      })
+      
+      // 先加上任務資訊
+      const logsWithTaskInfo = filteredWorkLogs.map(log => {
+        const task = tasks.value.find(t => t.id === log.task_id)
+        return {
+          ...log,
+          task_title: task?.title || '未指定任務',
+          case_number: task?.case_number || log.case_number || '-'
+        }
+      })
+      
+      // 按任務標題和案件編號進行群組
+      const groupedLogs = {}
+      logsWithTaskInfo.forEach(log => {
+        const groupKey = `${log.task_title}_${log.case_number}`
+        if (!groupedLogs[groupKey]) {
+          groupedLogs[groupKey] = {
+            task_title: log.task_title,
+            case_number: log.case_number,
+            work_entries: {},
+            total_hours: 0,
+            date_descriptions: {}
+          }
+        }
+        
+        // 按日期記錄工時和描述
+        const dateKey = log.work_date
+        if (!groupedLogs[groupKey].work_entries[dateKey]) {
+          groupedLogs[groupKey].work_entries[dateKey] = 0
+          groupedLogs[groupKey].date_descriptions[dateKey] = []
+        }
+        groupedLogs[groupKey].work_entries[dateKey] += log.hours || 0
+        groupedLogs[groupKey].total_hours += log.hours || 0
+        
+        if (log.description && log.description.trim()) {
+          groupedLogs[groupKey].date_descriptions[dateKey].push(log.description.trim())
+        }
+      })
+      
+      // 轉換為陣列並格式化
+      return Object.values(groupedLogs).map(group => {
+        // 按日期排序並格式化工時和描述資訊
+        const sortedEntries = Object.entries(group.work_entries)
+          .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+        
+        const workDetailLines = sortedEntries.map(([date, hours]) => {
+          const descriptions = [...new Set(group.date_descriptions[date] || [])]
+          const descText = descriptions.length > 0 ? `: ${descriptions.join(' | ')}` : ''
+          return `${formatDate(date)} (${hours.toFixed(1)}h)${descText}`
+        })
+        
+        return {
+          task_title: group.task_title,
+          case_number: group.case_number,
+          work_detail: workDetailLines.join('\n'),
+          total_hours: group.total_hours.toFixed(1)
+        }
+      }).sort((a, b) => a.task_title.localeCompare(b.task_title))
+    })
+    
+    const lastWeekRange = computed(() => {
+      return lastWeekInfo.display
+    })
+    
     const formatDate = (date) => {
       if (!date) return ''
       return new Date(date).toLocaleDateString('zh-TW')
     }
     
-    const formatDateTime = (dateTime) => {
-      if (!dateTime) return ''
-      return new Date(dateTime).toLocaleString('zh-TW')
+    // 匯出上週工作資訊為 CSV
+    const exportLastWeekData = () => {
+      if (lastWeekWorkLogs.value.length === 0) {
+        ElMessage.warning('上週無工作紀錄可匯出')
+        return
+      }
+      
+      // CSV 標題
+      const headers = ['案件編號', '任務標題', '工作明細', '總工時']
+      
+      // 轉換數據為 CSV 格式
+      const csvData = lastWeekWorkLogs.value.map(row => {
+        // 處理工作明細，將換行符替換為分號隔開
+        const workDetail = row.work_detail.replace(/\n/g, '; ')
+        
+        return [
+          `"${row.case_number}"`,
+          `"${row.task_title}"`,
+          `"${workDetail}"`,
+          `"${row.total_hours}h"`
+        ]
+      })
+      
+      // 組合 CSV 內容
+      const csvContent = [
+        headers.map(h => `"${h}"`).join(','),
+        ...csvData.map(row => row.join(','))
+      ].join('\n')
+      
+      // 加上 BOM 以支援中文顯示
+      const bom = '\uFEFF'
+      const csvWithBom = bom + csvContent
+      
+      // 建立下載連結
+      const blob = new Blob([csvWithBom], { type: 'text/csv;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      
+      const lastWeek = getLastWeekRange()
+      const fileName = `上週工作資訊_${lastWeek.start}_${lastWeek.end}.csv`
+      
+      link.href = url
+      link.download = fileName
+      link.click()
+      
+      // 清理資源
+      URL.revokeObjectURL(url)
+      
+      ElMessage.success(`已匯出 ${fileName}`)
     }
+    
     
     onMounted(async () => {
       await refreshData()
@@ -531,16 +491,14 @@ export default {
     })
     
     return {
-      workStats,
       workHoursStats,
-      recentWorkLogs,
-      monthlyStats,
+      lastWeekWorkLogs,
+      lastWeekRange,
       refreshData,
       handleDateRangeChange,
-      dateRangeTitle,
       getCategoryColor,
       formatDate,
-      formatDateTime,
+      exportLastWeekData,
       workHoursChartRef,
       dateRange,
       loading
@@ -550,46 +508,6 @@ export default {
 </script>
 
 <style scoped>
-.status-card {
-  height: 100px;
-}
-
-.status-card.work-hours {
-  border-left: 4px solid #409EFF;
-}
-
-.status-card.work-logs {
-  border-left: 4px solid #67C23A;
-}
-
-.status-card.avg-hours {
-  border-left: 4px solid #E6A23C;
-}
-
-.card-content {
-  display: flex;
-  align-items: center;
-  height: 100%;
-}
-
-.card-icon {
-  color: #409EFF;
-  margin-right: 15px;
-}
-
-.card-number {
-  font-size: 28px;
-  font-weight: bold;
-  color: #303133;
-  line-height: 1;
-}
-
-.card-label {
-  font-size: 13px;
-  color: #606266;
-  margin-top: 5px;
-}
-
 .chart-container {
   height: 300px;
   margin-top: 20px;
@@ -599,24 +517,6 @@ export default {
 .pie-chart-canvas {
   width: 100% !important;
   height: 100% !important;
-}
-
-.month-stat-item {
-  text-align: center;
-  padding: 20px 0;
-}
-
-.stat-number {
-  font-size: 24px;
-  font-weight: bold;
-  color: #409EFF;
-  line-height: 1;
-}
-
-.stat-label {
-  font-size: 13px;
-  color: #606266;
-  margin-top: 5px;
 }
 
 .empty-state {
