@@ -1,0 +1,20 @@
+{
+  "name": "work-tracker-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "dev": "npm run serve"
+  },
+  "dependencies": {
+    "vue": "^3.3.4",
+    "vue-router": "^4.2.4",
+    "axios": "^1.5.0",
+    "element-plus": "^2.3.12"
+  },
+  "devDependencies": {
+    "@vue/cli-service": "^5.0.8",
+    "webpack": "^5.88.2"
+  }
+}
