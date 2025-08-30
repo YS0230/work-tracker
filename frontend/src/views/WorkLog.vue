@@ -131,7 +131,16 @@
       <el-table-column type="index" label="流水號" width="80" :index="(index) => index + 1" />
       <el-table-column prop="work_date" label="工作日期" width="120" />
       <el-table-column prop="task_case_number" label="案件編號" width="120" />
-      <el-table-column prop="task_title" label="任務標題" min-width="200" />
+      <el-table-column prop="task_title" label="任務標題" min-width="200">
+        <template #default="scope">
+          <div>
+            <div>{{ scope.row.task_title }}</div>
+            <div v-if="scope.row.task_description" style="color: #999; font-size: 12px; margin-top: 2px;">
+              ({{ scope.row.task_description }})
+            </div>
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column prop="hours" label="工時" width="80" />
       <el-table-column prop="description" label="工作描述" min-width="200" show-overflow-tooltip />
       <el-table-column prop="completed" label="完成狀態" width="100" align="center">
@@ -211,6 +220,13 @@
             :precision="1"
             style="width: 100%"
           />
+        </el-form-item>
+        
+        <!-- 顯示選中任務的描述 -->
+        <el-form-item v-if="selectedTaskDescription" label="任務描述">
+          <div style="padding: 10px; background: #f5f5f5; border: 1px solid #dcdfe6; border-radius: 4px; color: #606266; width: 100%;">
+            {{ selectedTaskDescription }}
+          </div>
         </el-form-item>
         
         <el-form-item label="工作描述" prop="description">
@@ -400,6 +416,13 @@ const filteredWorkLogs = computed(() => {
 const handleSearch = () => {
   // 搜索功能由 computed 屬性自動處理
 }
+
+// 計算選中任務的描述
+const selectedTaskDescription = computed(() => {
+  if (!workLogForm.task_id) return ''
+  const selectedTask = incompleteTasks.value.find(task => task.id === workLogForm.task_id)
+  return selectedTask?.description || ''
+})
 
 // 編輯工作紀錄
 const editWorkLog = (workLog) => {

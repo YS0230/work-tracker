@@ -78,6 +78,7 @@ class WorkLog(db.Model):
             'task_id': self.task_id,
             'task_title': self.task.title if self.task else None,
             'task_case_number': self.task.case_number if self.task else None,
+            'task_description': self.task.description if self.task else None,
             'work_date': self.work_date.isoformat() if self.work_date else None,
             'hours': self.hours,
             'description': self.description,
