@@ -11,8 +11,11 @@
           router
           background-color="#f5f5f5"
         >
-          <el-menu-item index="/dashboard">
-            <span>儀錶板</span>
+          <el-menu-item index="/task-dashboard">
+            <span>任務儀錶板</span>
+          </el-menu-item>
+          <el-menu-item index="/work-dashboard">
+            <span>工作儀錶板</span>
           </el-menu-item>
           <el-menu-item index="/tasks">
             <span>任務管理</span>

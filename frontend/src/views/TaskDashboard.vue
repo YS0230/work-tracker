@@ -1,6 +1,40 @@
 <template>
   <div>
-    <!-- 總覽卡片區域 -->
+    <!-- 日期範圍查詢 -->
+    <el-row :gutter="20" style="margin-bottom: 20px">
+      <el-col :span="24">
+        <el-card>
+          <template #header>
+            <div style="display: flex; justify-content: space-between; align-items: center">
+              <span>任務查詢條件</span>
+              <el-icon><Search /></el-icon>
+            </div>
+          </template>
+          
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 14px; color: #606266;">時間範圍：</span>
+              <el-date-picker
+                v-model="dateRange"
+                type="daterange"
+                range-separator="至"
+                start-placeholder="開始日期"
+                end-placeholder="結束日期"
+                format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD"
+                @change="handleDateRangeChange"
+                style="width: 300px;"
+              />
+            </div>
+            <el-button @click="refreshData" :loading="loading" circle>
+              <el-icon><Refresh /></el-icon>
+            </el-button>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <!-- 任務總覽卡片區域 -->
     <el-row :gutter="20" style="margin-bottom: 20px">
       <el-col :span="6">
         <el-card class="status-card pending">
@@ -59,9 +93,9 @@
       </el-col>
     </el-row>
 
-    <!-- 類別統計 -->
+    <!-- 類別任務分布 -->
     <el-row :gutter="20" style="margin-bottom: 20px">
-      <el-col :span="12">
+      <el-col :span="24">
         <el-card>
           <template #header>
             <div style="display: flex; justify-content: space-between; align-items: center">
@@ -75,24 +109,9 @@
           </div>
         </el-card>
       </el-col>
-      
-      <el-col :span="12">
-        <el-card>
-          <template #header>
-            <div style="display: flex; justify-content: space-between; align-items: center">
-              <span>類別工時分布</span>
-              <el-icon><TrendCharts /></el-icon>
-            </div>
-          </template>
-          
-          <div class="chart-container">
-            <canvas ref="workHoursChartRef" class="pie-chart-canvas"></canvas>
-          </div>
-        </el-card>
-      </el-col>
     </el-row>
 
-    <!-- 近期任務和逾期提醒 -->
+    <!-- 近期任務 -->
     <el-row :gutter="20" style="margin-bottom: 20px">
       <el-col :span="12">
         <el-card>
@@ -168,14 +187,13 @@
       </el-col>
     </el-row>
 
-
-    <!-- 本月工作統計 -->
+    <!-- 任務統計 -->
     <el-row :gutter="20">
       <el-col :span="24">
         <el-card>
           <template #header>
             <div style="display: flex; justify-content: space-between; align-items: center">
-              <span>本月工作統計</span>
+              <span>{{ dateRangeTitle }}</span>
               <div>
                 <el-button @click="refreshData" size="small" circle>
                   <el-icon><Refresh /></el-icon>
@@ -187,25 +205,25 @@
           <el-row :gutter="20">
             <el-col :span="6">
               <div class="month-stat-item">
-                <div class="stat-number">{{ monthlyStats.totalCreated }}</div>
+                <div class="stat-number">{{ taskStats.totalCreated }}</div>
                 <div class="stat-label">新建任務</div>
               </div>
             </el-col>
             <el-col :span="6">
               <div class="month-stat-item">
-                <div class="stat-number">{{ monthlyStats.totalCompleted }}</div>
+                <div class="stat-number">{{ taskStats.totalCompleted }}</div>
                 <div class="stat-label">完成任務</div>
               </div>
             </el-col>
             <el-col :span="6">
               <div class="month-stat-item">
-                <div class="stat-number">{{ monthlyStats.totalWorkLogs }}</div>
-                <div class="stat-label">工作紀錄</div>
+                <div class="stat-number">{{ taskStats.totalInProgress }}</div>
+                <div class="stat-label">進行中任務</div>
               </div>
             </el-col>
             <el-col :span="6">
               <div class="month-stat-item">
-                <div class="stat-number">{{ (monthlyStats.completionRate * 100).toFixed(1) }}%</div>
+                <div class="stat-number">{{ (taskStats.completionRate * 100).toFixed(1) }}%</div>
                 <div class="stat-label">完成率</div>
               </div>
             </el-col>
@@ -220,10 +238,10 @@
 import { ref, onMounted, computed, nextTick, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { 
-  Clock, Loading, CircleCheck, List, TrendCharts, Pie, 
-  Warning, SuccessFilled, DocumentAdd, Refresh
+  Clock, Loading, CircleCheck, List, Pie, 
+  Warning, SuccessFilled, DocumentAdd, Refresh, Search
 } from '@element-plus/icons-vue'
-import { taskApi, workLogApi, categoryApi } from '../api'
+import { taskApi, categoryApi } from '../api'
 import {
   Chart as ChartJS,
   Title,
@@ -237,45 +255,85 @@ import {
 ChartJS.register(Title, Tooltip, Legend, ArcElement, DoughnutController, PieController)
 
 export default {
-  name: 'Dashboard',
+  name: 'TaskDashboard',
   components: {
-    Clock, Loading, CircleCheck, List, TrendCharts, Pie,
-    Warning, SuccessFilled, DocumentAdd, Refresh
+    Clock, Loading, CircleCheck, List, Pie,
+    Warning, SuccessFilled, DocumentAdd, Refresh, Search
   },
   setup() {
     const tasks = ref([])
-    const workLogs = ref([])
     const categories = ref([])
     const pieChartRef = ref(null)
-    const workHoursChartRef = ref(null)
+    
+    // 預設當月日期範圍
+    const getCurrentMonthRange = () => {
+      const now = new Date()
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
+      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+      
+      const formatDate = (date) => {
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        return `${year}-${month}-${day}`
+      }
+      
+      return [
+        formatDate(firstDay),
+        formatDate(lastDay)
+      ]
+    }
+    
+    const dateRange = ref(getCurrentMonthRange())
+    const loading = ref(false)
     let chartInstance = null
-    let workHoursChartInstance = null
     
     const stats = computed(() => {
-      const pendingTasks = tasks.value.filter(task => task.status === 'pending').length
-      const inProgressTasks = tasks.value.filter(task => task.status === 'in_progress').length
-      const completedTasks = tasks.value.filter(task => task.status === 'completed').length
-      const totalTasks = tasks.value.length
+      let filteredTasks = tasks.value
       
-      const highPriority = tasks.value.filter(task => task.priority === 'high').length
-      const mediumPriority = tasks.value.filter(task => task.priority === 'medium').length
-      const lowPriority = tasks.value.filter(task => task.priority === 'low').length
+      // 如果有設定日期範圍，按建立時間過濾
+      if (dateRange.value && dateRange.value.length === 2) {
+        const startDate = new Date(dateRange.value[0])
+        const endDate = new Date(dateRange.value[1] + ' 23:59:59')
+        
+        filteredTasks = tasks.value.filter(task => {
+          if (!task.created_at) return false
+          const createDate = new Date(task.created_at)
+          return createDate >= startDate && createDate <= endDate
+        })
+      }
+      
+      const pendingTasks = filteredTasks.filter(task => task.status === 'pending').length
+      const inProgressTasks = filteredTasks.filter(task => task.status === 'in_progress').length
+      const completedTasks = filteredTasks.filter(task => task.status === 'completed').length
+      const totalTasks = filteredTasks.length
       
       return {
         pendingTasks,
         inProgressTasks,
         completedTasks,
-        totalTasks,
-        highPriority,
-        mediumPriority,
-        lowPriority
+        totalTasks
       }
     })
     
     const categoryStats = computed(() => {
+      let filteredTasks = tasks.value
+      
+      // 如果有設定日期範圍，按建立時間過濾
+      if (dateRange.value && dateRange.value.length === 2) {
+        const startDate = new Date(dateRange.value[0])
+        const endDate = new Date(dateRange.value[1] + ' 23:59:59')
+        
+        filteredTasks = tasks.value.filter(task => {
+          if (!task.created_at) return false
+          const createDate = new Date(task.created_at)
+          return createDate >= startDate && createDate <= endDate
+        })
+      }
+      
       const categoryMap = {}
       
-      tasks.value.forEach(task => {
+      filteredTasks.forEach(task => {
         const categoryName = task.category_name || '未分類'
         if (!categoryMap[categoryName]) {
           categoryMap[categoryName] = 0
@@ -289,29 +347,25 @@ export default {
         .slice(0, 8)
     })
     
-    const workHoursStats = computed(() => {
-      const categoryHours = {}
-      
-      workLogs.value.forEach(log => {
-        const task = tasks.value.find(t => t.id === log.task_id)
-        const categoryName = task?.category_name || '未分類'
-        if (!categoryHours[categoryName]) {
-          categoryHours[categoryName] = 0
-        }
-        categoryHours[categoryName] += log.hours || 0
-      })
-      
-      return Object.entries(categoryHours)
-        .map(([name, hours]) => ({ name, hours }))
-        .sort((a, b) => b.hours - a.hours)
-        .slice(0, 8)
-    })
-    
     const upcomingTasks = computed(() => {
       const now = new Date()
       const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
       
-      return tasks.value
+      let filteredTasks = tasks.value
+      
+      // 如果有設定日期範圍，先按日期範圍過濾
+      if (dateRange.value && dateRange.value.length === 2) {
+        const startDate = new Date(dateRange.value[0])
+        const endDate = new Date(dateRange.value[1] + ' 23:59:59')
+        
+        filteredTasks = tasks.value.filter(task => {
+          if (!task.created_at) return false
+          const createDate = new Date(task.created_at)
+          return createDate >= startDate && createDate <= endDate
+        })
+      }
+      
+      return filteredTasks
         .filter(task => {
           if (!task.due_date || task.status === 'completed') return false
           const dueDate = new Date(task.due_date)
@@ -321,32 +375,60 @@ export default {
     })
     
     const recentCompletedTasks = computed(() => {
-      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      let filteredTasks = tasks.value
       
-      return tasks.value
-        .filter(task => {
+      // 如果有設定日期範圍，先按日期範圍過濾
+      if (dateRange.value && dateRange.value.length === 2) {
+        const startDate = new Date(dateRange.value[0])
+        const endDate = new Date(dateRange.value[1] + ' 23:59:59')
+        
+        filteredTasks = tasks.value.filter(task => {
+          if (!task.created_at) return false
+          const createDate = new Date(task.created_at)
+          return createDate >= startDate && createDate <= endDate
+        })
+      } else {
+        // 沒有日期範圍時，只顯示最近7天完成的任務
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+        filteredTasks = tasks.value.filter(task => {
           if (task.status !== 'completed' || !task.updated_at) return false
           return new Date(task.updated_at) >= sevenDaysAgo
         })
+      }
+      
+      return filteredTasks
+        .filter(task => task.status === 'completed')
         .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
     })
     
-    const monthlyStats = computed(() => {
-      const now = new Date()
-      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const taskStats = computed(() => {
+      let startDate, endDate
+      
+      if (dateRange.value && dateRange.value.length === 2) {
+        startDate = new Date(dateRange.value[0])
+        endDate = new Date(dateRange.value[1] + ' 23:59:59')
+      } else {
+        const now = new Date()
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
+      }
       
       const totalCreated = tasks.value.filter(task => {
-        return task.created_at && new Date(task.created_at) >= firstDayOfMonth
+        if (!task.created_at) return false
+        const createDate = new Date(task.created_at)
+        return createDate >= startDate && createDate <= endDate
       }).length
       
       const totalCompleted = tasks.value.filter(task => {
-        return task.status === 'completed' && 
-               task.updated_at && 
-               new Date(task.updated_at) >= firstDayOfMonth
+        if (task.status !== 'completed' || !task.updated_at) return false
+        const updateDate = new Date(task.updated_at)
+        return updateDate >= startDate && updateDate <= endDate
       }).length
       
-      const totalWorkLogs = workLogs.value.filter(log => {
-        return log.work_date && new Date(log.work_date) >= firstDayOfMonth
+      const totalInProgress = tasks.value.filter(task => {
+        if (task.status !== 'in_progress' || !task.created_at) return false
+        const createDate = new Date(task.created_at)
+        return createDate >= startDate && createDate <= endDate
       }).length
       
       const completionRate = totalCreated > 0 ? totalCompleted / totalCreated : 0
@@ -354,26 +436,22 @@ export default {
       return {
         totalCreated,
         totalCompleted,
-        totalWorkLogs,
+        totalInProgress,
         completionRate
       }
     })
     
-    const loadTasks = async () => {
+    const loadTasks = async (startDate = null, endDate = null) => {
       try {
-        const response = await taskApi.getAll()
+        const params = {}
+        if (startDate && endDate) {
+          params.start_date = startDate
+          params.end_date = endDate
+        }
+        const response = await taskApi.getAll(params)
         tasks.value = response.data
       } catch (error) {
         ElMessage.error('載入任務資料失敗')
-      }
-    }
-    
-    const loadWorkLogs = async () => {
-      try {
-        const response = await workLogApi.getAll()
-        workLogs.value = response.data
-      } catch (error) {
-        ElMessage.error('載入工作紀錄失敗')
       }
     }
     
@@ -387,19 +465,43 @@ export default {
     }
     
     const refreshData = async () => {
-      await Promise.all([loadTasks(), loadWorkLogs(), loadCategories()])
-      await nextTick()
-      initPieChart()
-      initWorkHoursChart()
-      ElMessage.success('資料已刷新')
+      loading.value = true
+      try {
+        const [startDate, endDate] = dateRange.value || []
+        await Promise.all([
+          loadTasks(startDate, endDate), 
+          loadCategories()
+        ])
+        await nextTick()
+        initPieChart()
+        ElMessage.success('資料已刷新')
+      } finally {
+        loading.value = false
+      }
     }
     
+    const handleDateRangeChange = async (value) => {
+      dateRange.value = value
+      if (value && value.length === 2) {
+        await refreshData()
+      }
+    }
+    
+    const dateRangeTitle = computed(() => {
+      if (dateRange.value && dateRange.value.length === 2) {
+        return `${dateRange.value[0]} ~ ${dateRange.value[1]} 任務統計`
+      }
+      return '本月任務統計'
+    })
+    
     const initPieChart = () => {
-      if (!pieChartRef.value || categoryStats.value.length === 0) return
+      if (!pieChartRef.value) return
       
       if (chartInstance) {
         chartInstance.destroy()
       }
+      
+      if (categoryStats.value.length === 0) return
       
       const ctx = pieChartRef.value.getContext('2d')
       
@@ -460,77 +562,6 @@ export default {
       })
     }
     
-    const initWorkHoursChart = () => {
-      if (!workHoursChartRef.value || workHoursStats.value.length === 0) return
-      
-      if (workHoursChartInstance) {
-        workHoursChartInstance.destroy()
-      }
-      
-      const ctx = workHoursChartRef.value.getContext('2d')
-      const totalHours = workHoursStats.value.reduce((sum, item) => sum + item.hours, 0)
-      
-      workHoursChartInstance = new ChartJS(ctx, {
-        type: 'pie',
-        data: {
-          labels: workHoursStats.value.map(item => item.name || '未分類'),
-          datasets: [{
-            data: workHoursStats.value.map(item => item.hours),
-            backgroundColor: workHoursStats.value.map((_, index) => getCategoryColor(index)),
-            borderColor: '#ffffff',
-            borderWidth: 2,
-            hoverOffset: 4
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'right',
-              labels: {
-                font: {
-                  size: 13
-                },
-                padding: 20,
-                generateLabels: (chart) => {
-                  const data = chart.data
-                  if (data.labels.length && data.datasets.length) {
-                    return data.labels.map((label, i) => {
-                      const hours = data.datasets[0].data[i]
-                      const percentage = totalHours > 0 ? ((hours / totalHours) * 100).toFixed(1) : '0.0'
-                      return {
-                        text: `${label} (${hours}h, ${percentage}%)`,
-                        fillStyle: data.datasets[0].backgroundColor[i],
-                        strokeStyle: data.datasets[0].borderColor,
-                        lineWidth: data.datasets[0].borderWidth,
-                        index: i
-                      }
-                    })
-                  }
-                  return []
-                }
-              }
-            },
-            tooltip: {
-              callbacks: {
-                label: (context) => {
-                  const label = context.label || ''
-                  const value = context.parsed
-                  const percentage = totalHours > 0 ? ((value / totalHours) * 100).toFixed(1) : '0.0'
-                  return `${label}: ${value}小時 (${percentage}%)`
-                }
-              }
-            }
-          }
-        }
-      })
-    }
-    
-    const getPercentage = (value) => {
-      return stats.value.totalTasks > 0 ? (value / stats.value.totalTasks) * 100 : 0
-    }
-    
     const getCategoryColor = (index) => {
       const colors = [
         '#409EFF', '#67C23A', '#E6A23C', '#F56C6C', 
@@ -580,27 +611,25 @@ export default {
       if (chartInstance) {
         chartInstance.destroy()
       }
-      if (workHoursChartInstance) {
-        workHoursChartInstance.destroy()
-      }
     })
     
     return {
       stats,
       categoryStats,
-      workHoursStats,
       upcomingTasks,
       recentCompletedTasks,
-      monthlyStats,
+      taskStats,
       refreshData,
-      getPercentage,
+      handleDateRangeChange,
+      dateRangeTitle,
       getCategoryColor,
       getPriorityType,
       getPriorityText,
       getDaysUntilDue,
       formatDateTime,
       pieChartRef,
-      workHoursChartRef
+      dateRange,
+      loading
     }
   }
 }
@@ -651,7 +680,6 @@ export default {
   margin-top: 5px;
 }
 
-
 .chart-container {
   height: 300px;
   margin-top: 20px;
@@ -662,7 +690,6 @@ export default {
   width: 100% !important;
   height: 100% !important;
 }
-
 
 .upcoming-task-item, .completed-task-item {
   display: flex;
