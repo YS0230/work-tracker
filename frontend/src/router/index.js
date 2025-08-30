@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import Dashboard from '../views/Dashboard.vue'
 import TaskList from '../views/TaskList.vue'
 import CategoryManagement from '../views/CategoryManagement.vue'
 import WorkLog from '../views/WorkLog.vue'
@@ -6,7 +7,12 @@ import WorkLog from '../views/WorkLog.vue'
 const routes = [
   {
     path: '/',
-    redirect: '/tasks'
+    redirect: '/dashboard'
+  },
+  {
+    path: '/dashboard',
+    name: 'Dashboard',
+    component: Dashboard
   },
   {
     path: '/tasks',
