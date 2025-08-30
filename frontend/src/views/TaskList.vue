@@ -153,15 +153,30 @@
     </el-row>
 
     <!-- 任務列表 -->
-    <el-table :data="filteredTasks" border style="width: 100%">
-      <el-table-column type="index" label="流水號" width="80" :index="(index) => index + 1" />
+    <el-table :data="filteredTasks" border style="width: 100%" row-key="id">
+      <el-table-column type="expand">
+        <template #default="props">
+          <div style="padding: 20px;">
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <p><strong>描述：</strong></p>
+                <p style="line-height: 1.6; margin-top: 10px;">{{ props.row.description || '無描述' }}</p>
+              </el-col>
+              <el-col :span="12">
+                <p><strong>建立時間：</strong></p>
+                <p style="line-height: 1.6; margin-top: 10px;">{{ formatDateTime(props.row.created_at) }}</p>
+              </el-col>
+            </el-row>
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column type="index" label="流水號" width="70" :index="(index) => index + 1" />
       <el-table-column prop="case_number" label="案號" width="120" />
-      <el-table-column prop="category_name" label="案件類別" width="120" />
-      <el-table-column prop="form_name" label="表單名稱" width="150" />
-      <el-table-column prop="title" label="任務標題" width="200" />
-      <el-table-column prop="description" label="描述" show-overflow-tooltip />
-      <el-table-column prop="requester" label="聲請人" width="100" />
-      <el-table-column prop="status" label="狀態" width="100">
+      <el-table-column prop="category_name" label="案件類別" width="100" />
+      <el-table-column prop="form_name" label="表單名稱" width="180" />
+      <el-table-column prop="title" label="任務標題" min-width="250" />
+      <el-table-column prop="requester" label="申請人" width="80" />
+      <el-table-column prop="status" label="狀態" width="90">
         <template #default="scope">
           <el-tag :type="getStatusType(scope.row.status)">
             {{ getStatusText(scope.row.status) }}
@@ -175,13 +190,8 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="due_date" label="截止日期" width="120" />
-      <el-table-column prop="created_at" label="建立時間" width="150">
-        <template #default="scope">
-          {{ formatDateTime(scope.row.created_at) }}
-        </template>
-      </el-table-column>
-      <el-table-column prop="updated_at" label="異動時間" width="150">
+      <el-table-column prop="due_date" label="截止日期" width="130" />
+      <el-table-column prop="updated_at" label="異動時間" width="180">
         <template #default="scope">
           {{ formatDateTime(scope.row.updated_at) }}
         </template>
@@ -498,6 +508,7 @@ export default {
     const handleSearch = () => {
       // 搜索功能由 computed 屬性自動處理
     }
+
 
     const toggleFilters = () => {
       showFilters.value = !showFilters.value
