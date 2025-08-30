@@ -29,6 +29,16 @@
         </template>
       </el-table-column>
       <el-table-column prop="due_date" label="截止日期" width="120" />
+      <el-table-column prop="created_at" label="建立時間" width="150">
+        <template #default="scope">
+          {{ formatDateTime(scope.row.created_at) }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="updated_at" label="異動時間" width="150">
+        <template #default="scope">
+          {{ formatDateTime(scope.row.updated_at) }}
+        </template>
+      </el-table-column>
       <el-table-column label="操作" width="150">
         <template #default="scope">
           <el-button size="small" @click="editTask(scope.row)">編輯</el-button>
@@ -261,6 +271,11 @@ export default {
       return texts[priority] || priority
     }
 
+    const formatDateTime = (dateTime) => {
+      if (!dateTime) return ''
+      return new Date(dateTime).toLocaleString('zh-TW')
+    }
+
     onMounted(() => {
       loadTasks()
       loadCategories()
@@ -281,7 +296,8 @@ export default {
       getStatusType,
       getStatusText,
       getPriorityType,
-      getPriorityText
+      getPriorityText,
+      formatDateTime
     }
   }
 }
