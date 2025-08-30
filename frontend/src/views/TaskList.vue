@@ -141,6 +141,10 @@
         </el-input>
       </el-col>
       <el-col :span="6" style="text-align: right">
+        <el-button @click="exportCSV" style="margin-right: 10px">
+          <el-icon><Download /></el-icon>
+          匯出CSV
+        </el-button>
         <el-button type="primary" @click="showAddDialog = true">
           <el-icon><Plus /></el-icon>
           新增任務
@@ -270,7 +274,7 @@
 <script>
 import { ref, onMounted, reactive, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, ArrowUp, ArrowDown, Plus, Edit, Delete } from '@element-plus/icons-vue'
+import { Search, ArrowUp, ArrowDown, Plus, Edit, Delete, Download } from '@element-plus/icons-vue'
 import { taskApi, categoryApi } from '../api'
 
 export default {
@@ -281,7 +285,8 @@ export default {
     ArrowDown,
     Plus,
     Edit,
-    Delete
+    Delete,
+    Download
   },
   setup() {
     const tasks = ref([])
@@ -522,6 +527,71 @@ export default {
       loadTasks()
     }
 
+    const exportCSV = () => {
+      if (filteredTasks.value.length === 0) {
+        ElMessage.warning('沒有資料可以匯出')
+        return
+      }
+
+      // CSV 標頭
+      const headers = [
+        '流水號',
+        '案號',
+        '案件類別',
+        '表單名稱',
+        '任務標題',
+        '描述',
+        '聲請人',
+        '狀態',
+        '優先級',
+        '截止日期',
+        '建立時間',
+        '異動時間'
+      ]
+
+      // 轉換資料
+      const csvData = filteredTasks.value.map((task, index) => [
+        index + 1,
+        task.case_number || '',
+        task.category_name || '',
+        task.form_name || '',
+        task.title || '',
+        task.description || '',
+        task.requester || '',
+        getStatusText(task.status),
+        getPriorityText(task.priority),
+        task.due_date || '',
+        formatDateTime(task.created_at),
+        formatDateTime(task.updated_at)
+      ])
+
+      // 建立 CSV 內容
+      const csvContent = [headers, ...csvData]
+        .map(row => row.map(field => `"${field}"`).join(','))
+        .join('\n')
+
+      // 加上 BOM 以支持中文
+      const BOM = '\uFEFF'
+      const csvWithBOM = BOM + csvContent
+
+      // 建立並下載檔案
+      const blob = new Blob([csvWithBOM], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      const url = URL.createObjectURL(blob)
+      link.setAttribute('href', url)
+      
+      const now = new Date()
+      const timestamp = now.toISOString().slice(0, 19).replace(/:/g, '-')
+      link.setAttribute('download', `任務清單_${timestamp}.csv`)
+      
+      link.style.visibility = 'hidden'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      ElMessage.success(`已匯出 ${filteredTasks.value.length} 筆資料`)
+    }
+
     onMounted(() => {
       loadTasks()
       loadCategories()
@@ -542,6 +612,7 @@ export default {
       toggleFilters,
       searchTasks,
       resetFilters,
+      exportCSV,
       resetForm,
       submitTask,
       editTask,
