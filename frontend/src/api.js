@@ -9,6 +9,52 @@ const api = axios.create({
   }
 })
 
+// Token 管理
+let authToken = localStorage.getItem('authToken')
+
+// 設置 token
+export const setAuthToken = (token) => {
+  authToken = token
+  localStorage.setItem('authToken', token)
+  if (token) {
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`
+  } else {
+    delete api.defaults.headers.common['Authorization']
+    localStorage.removeItem('authToken')
+  }
+}
+
+// 清除 token
+export const clearAuthToken = () => {
+  setAuthToken(null)
+}
+
+// 檢查 token 是否存在
+export const hasAuthToken = () => {
+  return !!authToken
+}
+
+// 初始化時設置 token
+if (authToken) {
+  api.defaults.headers.common['Authorization'] = `Bearer ${authToken}`
+}
+
+// 請求攔截器
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      const errorCode = error.response?.data?.code
+      if (errorCode === 'NO_TOKEN' || errorCode === 'INVALID_TOKEN') {
+        clearAuthToken()
+        // 觸發登入對話框
+        window.dispatchEvent(new CustomEvent('auth-required'))
+      }
+    }
+    return Promise.reject(error)
+  }
+)
+
 // 類別相關 API
 export const categoryApi = {
   getAll: () => api.get('/categories'),
@@ -50,6 +96,11 @@ export const workLogApi = {
   create: (data) => api.post('/work-logs', data),
   update: (id, data) => api.put(`/work-logs/${id}`, data),
   delete: (id) => api.delete(`/work-logs/${id}`)
+}
+
+// 認證相關 API
+export const authApi = {
+  login: (username, password) => api.post('/auth/login', { username, password })
 }
 
 export default api

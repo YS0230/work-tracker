@@ -34,12 +34,26 @@
     <el-main style="padding: 20px">
       <router-view />
     </el-main>
+    
+    <!-- 登入對話框 -->
+    <LoginDialog @login-success="handleLoginSuccess" />
   </el-container>
 </template>
 
 <script>
+import LoginDialog from './components/LoginDialog.vue'
+
 export default {
-  name: 'App'
+  name: 'App',
+  components: {
+    LoginDialog
+  },
+  methods: {
+    handleLoginSuccess() {
+      // 登入成功後可以做一些處理，比如刷新頁面或顯示訊息
+      console.log('登入成功')
+    }
+  }
 }
 </script>
 

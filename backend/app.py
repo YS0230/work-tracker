@@ -2,13 +2,22 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from models import db, Category, Task, WorkLog
 from datetime import datetime, date
+from functools import wraps
 import os
+import jwt
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 
 # 配置
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///work_tracker.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'your_secret_key_here')
+app.config['JWT_ALGORITHM'] = os.getenv('JWT_ALGORITHM', 'HS256')
+app.config['ADMIN_ACCOUNT'] = os.getenv('ADMIN_ACCOUNT', 'admin')
+app.config['ADMIN_PASSWORD'] = os.getenv('ADMIN_PASSWORD', 'password')
 
 # 初始化
 db.init_app(app)
@@ -41,6 +50,58 @@ with app.app_context():
         
         db.session.commit()
 
+# JWT 認證裝飾器
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        
+        # 從 Authorization header 取得 token
+        if 'Authorization' in request.headers:
+            auth_header = request.headers['Authorization']
+            if auth_header.startswith('Bearer '):
+                token = auth_header.split(' ')[1]
+        
+        if not token:
+            return jsonify({'error': '缺少認證令牌', 'code': 'NO_TOKEN'}), 401
+        
+        try:
+            # 驗證 token (無過期時間限制)
+            data = jwt.decode(token, app.config['JWT_SECRET_KEY'], algorithms=[app.config['JWT_ALGORITHM']])
+        except jwt.InvalidTokenError:
+            return jsonify({'error': '無效的認證令牌', 'code': 'INVALID_TOKEN'}), 401
+        
+        return f(*args, **kwargs)
+    
+    return decorated
+
+# 登入 API
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    try:
+        data = request.json
+        username = data.get('username')
+        password = data.get('password')
+        
+        if not username or not password:
+            return jsonify({'error': '請提供帳號和密碼'}), 400
+        
+        # 驗證帳密
+        if username == app.config['ADMIN_ACCOUNT'] and password == app.config['ADMIN_PASSWORD']:
+            # 生成 token (無過期時間)
+            token = jwt.encode(
+                {'username': username}, 
+                app.config['JWT_SECRET_KEY'], 
+                algorithm=app.config['JWT_ALGORITHM']
+            )
+            
+            return jsonify({'token': token, 'message': '登入成功'}), 200
+        else:
+            return jsonify({'error': '帳號或密碼錯誤'}), 401
+    
+    except Exception as e:
+        return jsonify({'error': '登入失敗'}), 500
+
 # 類別 API
 @app.route('/api/categories', methods=['GET'])
 def get_categories():
@@ -48,6 +109,7 @@ def get_categories():
     return jsonify([cat.to_dict() for cat in categories])
 
 @app.route('/api/categories', methods=['POST'])
+@token_required
 def create_category():
     data = request.json
     now = datetime.now()
@@ -65,6 +127,7 @@ def create_category():
     return jsonify(category.to_dict()), 201
 
 @app.route('/api/categories/<int:category_id>', methods=['PUT'])
+@token_required
 def update_category(category_id):
     category = Category.query.get_or_404(category_id)
     data = request.json
@@ -78,6 +141,7 @@ def update_category(category_id):
     return jsonify(category.to_dict())
 
 @app.route('/api/categories/<int:category_id>', methods=['DELETE'])
+@token_required
 def delete_category(category_id):
     category = Category.query.get_or_404(category_id)
     category.active = False
@@ -153,6 +217,7 @@ def get_tasks():
     return jsonify([task.to_dict() for task in tasks])
 
 @app.route('/api/tasks', methods=['POST'])
+@token_required
 def create_task():
     data = request.json
     now = datetime.now()
@@ -182,6 +247,7 @@ def create_task():
     return jsonify(task.to_dict()), 201
 
 @app.route('/api/tasks/<int:task_id>', methods=['PUT'])
+@token_required
 def update_task(task_id):
     task = Task.query.get_or_404(task_id)
     data = request.json
@@ -206,6 +272,7 @@ def update_task(task_id):
     return jsonify(task.to_dict())
 
 @app.route('/api/tasks/<int:task_id>', methods=['DELETE'])
+@token_required
 def delete_task(task_id):
     task = Task.query.get_or_404(task_id)
     db.session.delete(task)
@@ -240,6 +307,7 @@ def get_work_logs():
     return jsonify([log.to_dict() for log in work_logs])
 
 @app.route('/api/work-logs', methods=['POST'])
+@token_required
 def create_work_log():
     data = request.json
     now = datetime.now()
@@ -270,6 +338,7 @@ def create_work_log():
     return jsonify(work_log.to_dict()), 201
 
 @app.route('/api/work-logs/<int:log_id>', methods=['PUT'])
+@token_required
 def update_work_log(log_id):
     work_log = WorkLog.query.get_or_404(log_id)
     data = request.json
@@ -304,6 +373,7 @@ def update_work_log(log_id):
     return jsonify(work_log.to_dict())
 
 @app.route('/api/work-logs/<int:log_id>', methods=['DELETE'])
+@token_required
 def delete_work_log(log_id):
     work_log = WorkLog.query.get_or_404(log_id)
     db.session.delete(work_log)
