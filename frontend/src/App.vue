@@ -1,15 +1,16 @@
 <template>
   <el-container style="height: 100vh">
-    <el-header style="background: #409EFF; color: white; line-height: 60px">
-      <h2 style="margin: 0">工作事項記錄系統</h2>
-    </el-header>
-    
-    <el-container>
-      <el-aside width="200px" style="background: #f5f5f5">
+    <el-header style="background: #409EFF; color: white; padding: 0">
+      <div style="display: flex; align-items: center; height: 100%; padding: 0 20px">
+        <h2 style="margin: 0; margin-right: 40px">工作事項記錄系統</h2>
         <el-menu
           :default-active="$route.path"
+          mode="horizontal"
           router
-          background-color="#f5f5f5"
+          background-color="#409EFF"
+          text-color="white"
+          active-text-color="#FFD700"
+          style="flex: 1; border-bottom: none"
         >
           <el-menu-item index="/task-dashboard">
             <span>任務儀錶板</span>
@@ -27,12 +28,12 @@
             <span>類別維護</span>
           </el-menu-item>
         </el-menu>
-      </el-aside>
-      
-      <el-main>
-        <router-view />
-      </el-main>
-    </el-container>
+      </div>
+    </el-header>
+    
+    <el-main style="padding: 20px">
+      <router-view />
+    </el-main>
   </el-container>
 </template>
 

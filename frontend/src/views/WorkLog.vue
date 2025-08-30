@@ -129,7 +129,7 @@
     <!-- 工作紀錄列表 -->
     <el-table :data="filteredWorkLogs" border style="width: 100%">
       <el-table-column type="index" label="流水號" width="80" :index="(index) => index + 1" />
-      <el-table-column prop="work_date" label="工作日期" width="120" />
+      <el-table-column prop="work_date" label="工作日期" width="100" />
       <el-table-column prop="task_case_number" label="案件編號" width="120" />
       <el-table-column prop="task_title" label="任務標題" min-width="200">
         <template #default="scope">
@@ -141,7 +141,7 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="hours" label="工時" width="80" />
+      <el-table-column prop="hours" label="工時" width="60" />
       <el-table-column prop="description" label="工作描述" min-width="200" show-overflow-tooltip />
       <el-table-column prop="completed" label="完成狀態" width="100" align="center">
         <template #default="scope">
