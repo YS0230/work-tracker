@@ -141,7 +141,10 @@
         </el-input>
       </el-col>
       <el-col :span="6" style="text-align: right">
-        <el-button type="primary" @click="showAddDialog = true">新增任務</el-button>
+        <el-button type="primary" @click="showAddDialog = true">
+          <el-icon><Plus /></el-icon>
+          新增任務
+        </el-button>
       </el-col>
     </el-row>
 
@@ -179,10 +182,14 @@
           {{ formatDateTime(scope.row.updated_at) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="150">
+      <el-table-column label="操作" width="100">
         <template #default="scope">
-          <el-button size="small" @click="editTask(scope.row)">編輯</el-button>
-          <el-button size="small" type="danger" @click="deleteTask(scope.row.id)">刪除</el-button>
+          <el-button size="small" @click="editTask(scope.row)" circle>
+            <el-icon><Edit /></el-icon>
+          </el-button>
+          <el-button size="small" type="danger" @click="deleteTask(scope.row.id)" circle>
+            <el-icon><Delete /></el-icon>
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -263,7 +270,7 @@
 <script>
 import { ref, onMounted, reactive, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, ArrowUp, ArrowDown } from '@element-plus/icons-vue'
+import { Search, ArrowUp, ArrowDown, Plus, Edit, Delete } from '@element-plus/icons-vue'
 import { taskApi, categoryApi } from '../api'
 
 export default {
@@ -271,7 +278,10 @@ export default {
   components: {
     Search,
     ArrowUp,
-    ArrowDown
+    ArrowDown,
+    Plus,
+    Edit,
+    Delete
   },
   setup() {
     const tasks = ref([])
