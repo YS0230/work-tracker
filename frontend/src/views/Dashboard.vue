@@ -61,17 +61,32 @@
 
     <!-- 類別統計 -->
     <el-row :gutter="20" style="margin-bottom: 20px">
-      <el-col :span="24">
+      <el-col :span="12">
         <el-card>
           <template #header>
             <div style="display: flex; justify-content: space-between; align-items: center">
-              <span>類別統計</span>
+              <span>類別任務分布</span>
               <el-icon><Pie /></el-icon>
             </div>
           </template>
           
           <div class="chart-container">
             <canvas ref="pieChartRef" class="pie-chart-canvas"></canvas>
+          </div>
+        </el-card>
+      </el-col>
+      
+      <el-col :span="12">
+        <el-card>
+          <template #header>
+            <div style="display: flex; justify-content: space-between; align-items: center">
+              <span>類別工時分布</span>
+              <el-icon><TrendCharts /></el-icon>
+            </div>
+          </template>
+          
+          <div class="chart-container">
+            <canvas ref="workHoursChartRef" class="pie-chart-canvas"></canvas>
           </div>
         </el-card>
       </el-col>
@@ -232,7 +247,9 @@ export default {
     const workLogs = ref([])
     const categories = ref([])
     const pieChartRef = ref(null)
+    const workHoursChartRef = ref(null)
     let chartInstance = null
+    let workHoursChartInstance = null
     
     const stats = computed(() => {
       const pendingTasks = tasks.value.filter(task => task.status === 'pending').length
@@ -269,6 +286,24 @@ export default {
       return Object.entries(categoryMap)
         .map(([name, count]) => ({ name, count }))
         .sort((a, b) => b.count - a.count)
+        .slice(0, 8)
+    })
+    
+    const workHoursStats = computed(() => {
+      const categoryHours = {}
+      
+      workLogs.value.forEach(log => {
+        const task = tasks.value.find(t => t.id === log.task_id)
+        const categoryName = task?.category_name || '未分類'
+        if (!categoryHours[categoryName]) {
+          categoryHours[categoryName] = 0
+        }
+        categoryHours[categoryName] += log.hours || 0
+      })
+      
+      return Object.entries(categoryHours)
+        .map(([name, hours]) => ({ name, hours }))
+        .sort((a, b) => b.hours - a.hours)
         .slice(0, 8)
     })
     
@@ -355,6 +390,7 @@ export default {
       await Promise.all([loadTasks(), loadWorkLogs(), loadCategories()])
       await nextTick()
       initPieChart()
+      initWorkHoursChart()
       ElMessage.success('資料已刷新')
     }
     
@@ -424,6 +460,73 @@ export default {
       })
     }
     
+    const initWorkHoursChart = () => {
+      if (!workHoursChartRef.value || workHoursStats.value.length === 0) return
+      
+      if (workHoursChartInstance) {
+        workHoursChartInstance.destroy()
+      }
+      
+      const ctx = workHoursChartRef.value.getContext('2d')
+      const totalHours = workHoursStats.value.reduce((sum, item) => sum + item.hours, 0)
+      
+      workHoursChartInstance = new ChartJS(ctx, {
+        type: 'pie',
+        data: {
+          labels: workHoursStats.value.map(item => item.name || '未分類'),
+          datasets: [{
+            data: workHoursStats.value.map(item => item.hours),
+            backgroundColor: workHoursStats.value.map((_, index) => getCategoryColor(index)),
+            borderColor: '#ffffff',
+            borderWidth: 2,
+            hoverOffset: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: {
+                font: {
+                  size: 13
+                },
+                padding: 20,
+                generateLabels: (chart) => {
+                  const data = chart.data
+                  if (data.labels.length && data.datasets.length) {
+                    return data.labels.map((label, i) => {
+                      const hours = data.datasets[0].data[i]
+                      const percentage = totalHours > 0 ? ((hours / totalHours) * 100).toFixed(1) : '0.0'
+                      return {
+                        text: `${label} (${hours}h, ${percentage}%)`,
+                        fillStyle: data.datasets[0].backgroundColor[i],
+                        strokeStyle: data.datasets[0].borderColor,
+                        lineWidth: data.datasets[0].borderWidth,
+                        index: i
+                      }
+                    })
+                  }
+                  return []
+                }
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: (context) => {
+                  const label = context.label || ''
+                  const value = context.parsed
+                  const percentage = totalHours > 0 ? ((value / totalHours) * 100).toFixed(1) : '0.0'
+                  return `${label}: ${value}小時 (${percentage}%)`
+                }
+              }
+            }
+          }
+        }
+      })
+    }
+    
     const getPercentage = (value) => {
       return stats.value.totalTasks > 0 ? (value / stats.value.totalTasks) * 100 : 0
     }
@@ -477,11 +580,15 @@ export default {
       if (chartInstance) {
         chartInstance.destroy()
       }
+      if (workHoursChartInstance) {
+        workHoursChartInstance.destroy()
+      }
     })
     
     return {
       stats,
       categoryStats,
+      workHoursStats,
       upcomingTasks,
       recentCompletedTasks,
       monthlyStats,
@@ -492,7 +599,8 @@ export default {
       getPriorityText,
       getDaysUntilDue,
       formatDateTime,
-      pieChartRef
+      pieChartRef,
+      workHoursChartRef
     }
   }
 }
