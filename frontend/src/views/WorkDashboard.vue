@@ -167,7 +167,8 @@ export default {
     PieChart, Refresh, Search, Document, DocumentAdd, Download
   },
   setup() {
-    const workLogs = ref([])
+    const currentRangeWorkLogs = ref([])
+    const lastWeekWorkLogsData = ref([])
     const workHoursChartRef = ref(null)
     const lastWeekCategoryChartRef = ref(null)
     const lastWeekTaskChartRef = ref(null)
@@ -226,23 +227,9 @@ export default {
     
     
     const workHoursStats = computed(() => {
-      let filteredWorkLogs = workLogs.value
-      
-      // 如果有設定日期範圍，按工作日期過濾
-      if (dateRange.value && dateRange.value.length === 2) {
-        const startDate = new Date(dateRange.value[0])
-        const endDate = new Date(dateRange.value[1] + ' 23:59:59')
-        
-        filteredWorkLogs = workLogs.value.filter(log => {
-          if (!log.work_date) return false
-          const workDate = new Date(log.work_date)
-          return workDate >= startDate && workDate <= endDate
-        })
-      }
-      
       const categoryHours = {}
       
-      filteredWorkLogs.forEach(log => {
+      currentRangeWorkLogs.value.forEach(log => {
         const categoryName = log.task?.category_name || '未分類'
         if (!categoryHours[categoryName]) {
           categoryHours[categoryName] = 0
@@ -258,7 +245,7 @@ export default {
     
     
     
-    const loadWorkLogs = async (startDate = null, endDate = null) => {
+    const loadCurrentRangeWorkLogs = async (startDate = null, endDate = null) => {
       try {
         const params = {}
         if (startDate && endDate) {
@@ -266,9 +253,23 @@ export default {
           params.end_date = endDate
         }
         const response = await workLogApi.getAll(params)
-        workLogs.value = response.data
+        currentRangeWorkLogs.value = response.data
       } catch (error) {
-        ElMessage.error('載入工作紀錄失敗')
+        ElMessage.error('載入當前範圍工作紀錄失敗')
+      }
+    }
+    
+    const loadLastWeekWorkLogs = async () => {
+      try {
+        const lastWeek = getLastWeekRange()
+        const params = {
+          start_date: lastWeek.start,
+          end_date: lastWeek.end
+        }
+        const response = await workLogApi.getAll(params)
+        lastWeekWorkLogsData.value = response.data
+      } catch (error) {
+        ElMessage.error('載入上週工作紀錄失敗')
       }
     }
     
@@ -277,7 +278,10 @@ export default {
       loading.value = true
       try {
         const [startDate, endDate] = dateRange.value || []
-        await loadWorkLogs(startDate, endDate)
+        await Promise.all([
+          loadCurrentRangeWorkLogs(startDate, endDate),
+          loadLastWeekWorkLogs()
+        ])
         await nextTick()
         initWorkHoursChart()
         initLastWeekCategoryChart()
@@ -291,7 +295,15 @@ export default {
     const handleDateRangeChange = async (value) => {
       dateRange.value = value
       if (value && value.length === 2) {
-        await refreshData()
+        loading.value = true
+        try {
+          const [startDate, endDate] = value
+          await loadCurrentRangeWorkLogs(startDate, endDate)
+          await nextTick()
+          initWorkHoursChart()
+        } finally {
+          loading.value = false
+        }
       }
     }
     
@@ -381,19 +393,9 @@ export default {
     
     // 上週類別工時統計
     const lastWeekCategoryStats = computed(() => {
-      const lastWeek = getLastWeekRange()
-      const startDate = new Date(lastWeek.start)
-      const endDate = new Date(lastWeek.end + ' 23:59:59')
-      
-      const filteredWorkLogs = workLogs.value.filter(log => {
-        if (!log.work_date) return false
-        const workDate = new Date(log.work_date)
-        return workDate >= startDate && workDate <= endDate
-      })
-      
       const categoryHours = {}
       
-      filteredWorkLogs.forEach(log => {
+      lastWeekWorkLogsData.value.forEach(log => {
         const categoryName = log.task?.category_name || '未分類'
         if (!categoryHours[categoryName]) {
           categoryHours[categoryName] = 0
@@ -409,19 +411,9 @@ export default {
     
     // 上週任務標題工時統計
     const lastWeekTaskStats = computed(() => {
-      const lastWeek = getLastWeekRange()
-      const startDate = new Date(lastWeek.start)
-      const endDate = new Date(lastWeek.end + ' 23:59:59')
-      
-      const filteredWorkLogs = workLogs.value.filter(log => {
-        if (!log.work_date) return false
-        const workDate = new Date(log.work_date)
-        return workDate >= startDate && workDate <= endDate
-      })
-      
       const taskHours = {}
       
-      filteredWorkLogs.forEach(log => {
+      lastWeekWorkLogsData.value.forEach(log => {
         const taskTitle = log.task?.title || '未指定任務'
         if (!taskHours[taskTitle]) {
           taskHours[taskTitle] = 0
@@ -587,18 +579,8 @@ export default {
     
     // 上週工作紀錄（按任務標題和案件編號群組）
     const lastWeekWorkLogs = computed(() => {
-      const lastWeek = getLastWeekRange()
-      const startDate = new Date(lastWeek.start)
-      const endDate = new Date(lastWeek.end + ' 23:59:59')
-      
-      const filteredWorkLogs = workLogs.value.filter(log => {
-        if (!log.work_date) return false
-        const workDate = new Date(log.work_date)
-        return workDate >= startDate && workDate <= endDate
-      })
-      
       // 直接使用包含任務資訊的工作紀錄
-      const logsWithTaskInfo = filteredWorkLogs.map(log => ({
+      const logsWithTaskInfo = lastWeekWorkLogsData.value.map(log => ({
         ...log,
         task_title: log.task?.title || '未指定任務',
         case_number: log.task?.case_number || log.case_number || '-'
