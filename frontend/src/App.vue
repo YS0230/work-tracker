@@ -37,16 +37,21 @@
     
     <!-- 登入對話框 -->
     <LoginDialog @login-success="handleLoginSuccess" />
+    
+    <!-- 通知模態框 -->
+    <NotificationModal />
   </el-container>
 </template>
 
 <script>
 import LoginDialog from './components/LoginDialog.vue'
+import NotificationModal from './components/NotificationModal.vue'
 
 export default {
   name: 'App',
   components: {
-    LoginDialog
+    LoginDialog,
+    NotificationModal
   },
   methods: {
     handleLoginSuccess() {
