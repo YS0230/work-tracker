@@ -255,7 +255,8 @@ const showAddDialog = ref(false)
 const isEditing = ref(false)
 const workLogFormRef = ref()
 const searchKeyword = ref('')
-const showFilters = ref(true)
+// 從 localStorage 讀取篩選條件展開狀態，預設為 false（收合）
+const showFilters = ref(JSON.parse(localStorage.getItem('workLog_showFilters') ?? 'false'))
 
 // 獲取本週起訖日期的函數
 const getCurrentWeekRange = () => {
@@ -357,6 +358,8 @@ const resetFilters = () => {
 // 切換篩選區域顯示狀態
 const toggleFilters = () => {
   showFilters.value = !showFilters.value
+  // 儲存狀態到 localStorage
+  localStorage.setItem('workLog_showFilters', JSON.stringify(showFilters.value))
 }
 
 // 關鍵字搜尋的計算屬性

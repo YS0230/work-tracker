@@ -305,7 +305,8 @@ export default {
     const isEdit = ref(false)
     const taskFormRef = ref(null)
     const searchKeyword = ref('')
-    const showFilters = ref(true)
+    // 從 localStorage 讀取篩選條件展開狀態，預設為 false（收合）
+    const showFilters = ref(JSON.parse(localStorage.getItem('taskList_showFilters') ?? 'false'))
     const getDefaultFilters = () => {
       const now = new Date()
       const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
@@ -521,6 +522,8 @@ export default {
 
     const toggleFilters = () => {
       showFilters.value = !showFilters.value
+      // 儲存狀態到 localStorage
+      localStorage.setItem('taskList_showFilters', JSON.stringify(showFilters.value))
     }
 
     const searchTasks = async () => {
