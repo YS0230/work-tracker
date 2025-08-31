@@ -375,35 +375,6 @@ const filteredWorkLogs = computed(() => {
     })
   }
   
-  // 案件編號篩選
-  if (filters.case_number) {
-    const caseNumber = filters.case_number.toLowerCase()
-    result = result.filter(log => 
-      log.task?.case_number?.toLowerCase().includes(caseNumber)
-    )
-  }
-  
-  // 任務標題篩選
-  if (filters.task_title) {
-    const taskTitle = filters.task_title.toLowerCase()
-    result = result.filter(log => 
-      log.task?.title?.toLowerCase().includes(taskTitle)
-    )
-  }
-  
-  // 完成狀態篩選
-  if (filters.completed !== null) {
-    result = result.filter(log => log.completed === filters.completed)
-  }
-  
-  // 工時範圍篩選
-  if (filters.hours_min !== null) {
-    result = result.filter(log => log.hours >= filters.hours_min)
-  }
-  if (filters.hours_max !== null) {
-    result = result.filter(log => log.hours <= filters.hours_max)
-  }
-  
   return result
 })
 
