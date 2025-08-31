@@ -34,7 +34,7 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="12">
             <el-form-item label="工作日期範圍">
               <el-date-picker
                 v-model="filters.work_date_range"
@@ -49,10 +49,7 @@
               />
             </el-form-item>
           </el-col>
-        </el-row>
-        
-        <el-row :gutter="20">
-          <el-col :span="8">
+          <el-col :span="12">
             <el-form-item label="工作時數範圍">
               <el-row :gutter="10">
                 <el-col :span="12">
