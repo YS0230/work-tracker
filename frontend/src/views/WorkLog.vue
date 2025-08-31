@@ -122,7 +122,7 @@
           {{ scope.row.task?.case_number }}
         </template>
       </el-table-column>
-      <el-table-column label="任務標題" min-width="200">
+      <el-table-column label="任務標題(描述)" min-width="200">
         <template #default="scope">
           <div>
             <div>{{ scope.row.task?.title }}</div>
