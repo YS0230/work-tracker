@@ -35,7 +35,7 @@
         </div>
         
         <div class="form-actions">
-          <button type="submit" :disabled="loading" v-debounce="3000" class="btn-primary">
+          <button type="submit" :disabled="loading" class="btn-primary">
             {{ loading ? '登入中...' : '登入' }}
           </button>
         </div>
