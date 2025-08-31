@@ -57,7 +57,16 @@ api.interceptors.response.use(
 
 // 類別相關 API
 export const categoryApi = {
-  getAll: () => api.get('/categories'),
+  getAll: (params = {}) => {
+    const queryString = new URLSearchParams()
+    Object.keys(params).forEach(key => {
+      if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
+        queryString.append(key, params[key])
+      }
+    })
+    const url = queryString.toString() ? `/categories?${queryString.toString()}` : '/categories'
+    return api.get(url)
+  },
   create: (data) => api.post('/categories', data),
   update: (id, data) => api.put(`/categories/${id}`, data),
   delete: (id) => api.delete(`/categories/${id}`)

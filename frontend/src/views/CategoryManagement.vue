@@ -41,7 +41,6 @@
             size="small" 
             type="danger" 
             @click="deleteCategory(scope.row.id)"
-            :disabled="scope.row.active"
           >
             刪除
           </el-button>
@@ -111,7 +110,7 @@ export default {
 
     const loadCategories = async () => {
       try {
-        const response = await categoryApi.getAll()
+        const response = await categoryApi.getAll({ include_inactive: true })
         categories.value = response.data
       } catch (error) {
         ElMessage.error('載入類別失敗')
@@ -187,7 +186,11 @@ export default {
         loadCategories()
       } catch (error) {
         if (error !== 'cancel') {
-          ElMessage.error('刪除失敗')
+          if (error.response && error.response.data && error.response.data.error) {
+            ElMessage.error(error.response.data.error)
+          } else {
+            ElMessage.error('刪除失敗')
+          }
         }
       }
     }

@@ -105,7 +105,14 @@ def login():
 # 類別 API
 @app.route('/api/categories', methods=['GET'])
 def get_categories():
-    categories = Category.query.filter_by(active=True).all()
+    # 如果有 include_inactive 參數，則返回所有類別，否則只返回啟用的類別
+    include_inactive = request.args.get('include_inactive', 'false').lower() == 'true'
+    
+    if include_inactive:
+        categories = Category.query.all()
+    else:
+        categories = Category.query.filter_by(active=True).all()
+    
     return jsonify([cat.to_dict() for cat in categories])
 
 @app.route('/api/categories', methods=['POST'])
@@ -144,6 +151,12 @@ def update_category(category_id):
 @token_required
 def delete_category(category_id):
     category = Category.query.get_or_404(category_id)
+    
+    # 檢查是否有任務使用此類別
+    existing_tasks = Task.query.filter_by(category_id=category_id).count()
+    if existing_tasks > 0:
+        return jsonify({'error': f'無法刪除類別，還有 {existing_tasks} 個任務正在使用此類別'}), 400
+    
     category.active = False
     category.updated_at = datetime.now()
     
@@ -275,6 +288,12 @@ def update_task(task_id):
 @token_required
 def delete_task(task_id):
     task = Task.query.get_or_404(task_id)
+    
+    # 檢查是否有工作紀錄使用此任務
+    existing_work_logs = WorkLog.query.filter_by(task_id=task_id).count()
+    if existing_work_logs > 0:
+        return jsonify({'error': f'無法刪除任務，還有 {existing_work_logs} 筆工作紀錄正在使用此任務'}), 400
+    
     db.session.delete(task)
     db.session.commit()
     

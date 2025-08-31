@@ -222,7 +222,7 @@
         <el-form-item label="案件類別" prop="category_id">
           <el-select v-model="taskForm.category_id" placeholder="請選擇類別">
             <el-option
-              v-for="category in categories"
+              v-for="category in activeCategories"
               :key="category.id"
               :label="category.name"
               :value="category.id"
@@ -390,7 +390,8 @@ export default {
 
     const loadCategories = async () => {
       try {
-        const response = await categoryApi.getAll()
+        // 只載入一次，獲取所有類別
+        const response = await categoryApi.getAll({ include_inactive: true })
         categories.value = response.data
       } catch (error) {
         ElMessage.error('載入類別失敗')
@@ -441,7 +442,11 @@ export default {
         loadTasks()
       } catch (error) {
         if (error !== 'cancel') {
-          ElMessage.error('刪除失敗')
+          if (error.response && error.response.data && error.response.data.error) {
+            ElMessage.error(error.response.data.error)
+          } else {
+            ElMessage.error('刪除失敗')
+          }
         }
       }
     }
@@ -503,6 +508,10 @@ export default {
           task.requester?.toLowerCase().includes(keyword)
         )
       })
+    })
+
+    const activeCategories = computed(() => {
+      return categories.value.filter(category => category.active)
     })
 
     const handleSearch = () => {
@@ -645,6 +654,7 @@ export default {
     return {
       tasks,
       categories,
+      activeCategories,
       showAddDialog,
       isEdit,
       taskForm,
