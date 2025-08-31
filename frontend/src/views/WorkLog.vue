@@ -375,6 +375,9 @@ const filteredWorkLogs = computed(() => {
     })
   }
   
+  // 按異動時間降序排序
+  result.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
+  
   return result
 })
 
