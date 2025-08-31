@@ -8,7 +8,7 @@ import WorkLog from '../views/WorkLog.vue'
 const routes = [
   {
     path: '/',
-    redirect: '/task-dashboard'
+    redirect: '/work-logs'
   },
   {
     path: '/task-dashboard',
