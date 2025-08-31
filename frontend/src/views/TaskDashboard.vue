@@ -26,7 +26,7 @@
                 style="width: 300px;"
               />
             </div>
-            <el-button @click="refreshData" :loading="loading" circle>
+            <el-button @click="refreshData" :loading="loading" v-debounce="2000" circle>
               <el-icon><Refresh /></el-icon>
             </el-button>
           </div>
@@ -195,7 +195,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center">
               <span>{{ dateRangeTitle }}</span>
               <div>
-                <el-button @click="refreshData" size="small" circle>
+                <el-button @click="refreshData" v-debounce="2000" size="small" circle>
                   <el-icon><Refresh /></el-icon>
                 </el-button>
               </div>

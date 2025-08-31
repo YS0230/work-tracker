@@ -81,8 +81,8 @@
         
         <el-row>
           <el-col :span="24" style="text-align: right">
-            <el-button @click="resetFilters">重置</el-button>
-            <el-button type="primary" @click="searchWorkLogs">查詢</el-button>
+            <el-button @click="resetFilters" v-debounce="1000">重置</el-button>
+            <el-button type="primary" @click="searchWorkLogs" v-debounce="2000">查詢</el-button>
           </el-col>
         </el-row>
       </div>
@@ -102,11 +102,11 @@
         </el-input>
       </el-col>
       <el-col :span="6" style="text-align: right">
-        <el-button @click="exportCSV" style="margin-right: 10px">
+        <el-button @click="exportCSV" v-debounce="3000" style="margin-right: 10px">
           <el-icon><Download /></el-icon>
           匯出CSV
         </el-button>
-        <el-button type="primary" @click="showAddDialog = true">
+        <el-button type="primary" @click="showAddDialog = true" v-debounce="1000">
           <el-icon><Plus /></el-icon>
           新增工作紀錄
         </el-button>
@@ -236,7 +236,7 @@
       
       <template #footer>
         <el-button @click="showAddDialog = false">取消</el-button>
-        <el-button type="primary" @click="saveWorkLog">確定</el-button>
+        <el-button type="primary" @click="saveWorkLog" v-debounce="2000">確定</el-button>
       </template>
     </el-dialog>
   </div>

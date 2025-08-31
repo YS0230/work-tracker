@@ -2,7 +2,7 @@
   <div>
     <el-row style="margin-bottom: 20px">
       <el-col :span="24">
-        <el-button type="primary" @click="showAddDialog = true">新增類別</el-button>
+        <el-button type="primary" @click="showAddDialog = true" v-debounce="1000">新增類別</el-button>
       </el-col>
     </el-row>
 
@@ -29,11 +29,12 @@
       </el-table-column>
       <el-table-column label="操作" width="200">
         <template #default="scope">
-          <el-button size="small" @click="editCategory(scope.row)">編輯</el-button>
+          <el-button size="small" @click="editCategory(scope.row)" v-debounce="1000">編輯</el-button>
           <el-button 
             size="small" 
             :type="scope.row.active ? 'warning' : 'success'"
             @click="toggleCategory(scope.row)"
+            v-debounce="2000"
           >
             {{ scope.row.active ? '停用' : '啟用' }}
           </el-button>
@@ -41,6 +42,7 @@
             size="small" 
             type="danger" 
             @click="deleteCategory(scope.row.id)"
+            v-debounce="2000"
           >
             刪除
           </el-button>
@@ -70,7 +72,7 @@
       
       <template #footer>
         <el-button @click="showAddDialog = false">取消</el-button>
-        <el-button type="primary" @click="submitCategory">確定</el-button>
+        <el-button type="primary" @click="submitCategory" v-debounce="2000">確定</el-button>
       </template>
     </el-dialog>
   </div>

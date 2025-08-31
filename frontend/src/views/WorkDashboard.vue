@@ -8,7 +8,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center">
               <span>上週工作資訊 ({{ lastWeekRange }})</span>
               <div style="display: flex; gap: 10px; align-items: center;">
-                <el-button @click="exportLastWeekData" size="small" type="success">
+                <el-button @click="exportLastWeekData" v-debounce="3000" size="small" type="success">
                   <el-icon><Download /></el-icon>
                   匯出 CSV
                 </el-button>
@@ -112,7 +112,7 @@
                 style="width: 300px;"
               />
             </div>
-            <el-button @click="refreshData" :loading="loading" circle>
+            <el-button @click="refreshData" :loading="loading" v-debounce="2000" circle>
               <el-icon><Refresh /></el-icon>
             </el-button>
           </div>
