@@ -52,8 +52,8 @@
             </el-form-item>
           </el-col>
           <el-col :span="6">
-            <el-form-item label="聲請人">
-              <el-input v-model="filters.requester" placeholder="請輸入聲請人" clearable />
+            <el-form-item label="申請人">
+              <el-input v-model="filters.requester" placeholder="請輸入申請人" clearable />
             </el-form-item>
           </el-col>
           <el-col :span="6">
@@ -131,7 +131,7 @@
       <el-col :span="18">
         <el-input
           v-model="searchKeyword"
-          placeholder="輸入關鍵字搜索任務（案號、案件類別、表單名稱、標題、描述、聲請人）"
+          placeholder="輸入關鍵字搜索任務（案號、案件類別、表單名稱、標題、描述、申請人）"
           clearable
           @input="handleSearch"
         >
@@ -242,7 +242,7 @@
           <el-input type="textarea" v-model="taskForm.description" :rows="3" />
         </el-form-item>
         
-        <el-form-item label="聲請人">
+        <el-form-item label="申請人">
           <el-input v-model="taskForm.requester" />
         </el-form-item>
         
@@ -598,7 +598,7 @@ export default {
         '表單名稱',
         '任務標題',
         '描述',
-        '聲請人',
+        '申請人',
         '狀態',
         '優先級',
         '截止日期',
