@@ -71,21 +71,40 @@ export default {
 
 body {
   font-family: 'Microsoft JhengHei', sans-serif;
-  font-size: 13px;
+  font-size: 14px;
+  color: #2c3e50;
 }
 
 .el-table {
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .el-form-item__label {
-  font-size: 13px;
+  font-size: 14px;
+  color: #2c3e50 !important;
+  font-weight: 500;
 }
 
 .el-input__inner,
 .el-textarea__inner,
 .el-select .el-input__inner,
 .el-date-editor.el-input {
-  font-size: 13px;
+  font-size: 14px;
+}
+
+/* 提高整體文字對比度 */
+.el-table td .cell,
+.el-table th .cell {
+  color: #2c3e50;
+}
+
+/* 改善次要文字的可見度 */
+.secondary-text {
+  color: #34495e !important;
+}
+
+/* 改善淺色文字的可見度 */
+.muted-text {
+  color: #5a6c7d !important;
 }
 </style>

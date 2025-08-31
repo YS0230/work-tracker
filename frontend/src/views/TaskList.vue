@@ -174,7 +174,7 @@
       <el-table-column prop="case_number" label="案號" width="120" />
       <el-table-column prop="category_name" label="案件類別" width="100" />
       <el-table-column prop="form_name" label="表單名稱" width="180" />
-      <el-table-column prop="title" label="任務標題" min-width="250" />
+      <el-table-column prop="title" label="任務標題" min-width="200" />
       <el-table-column prop="requester" label="申請人" width="80" />
       <el-table-column prop="status" label="狀態" width="90">
         <template #default="scope">
@@ -190,8 +190,8 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="due_date" label="截止日期" width="130" />
-      <el-table-column prop="updated_at" label="異動時間" width="180">
+      <el-table-column prop="due_date" label="截止日期" width="110" />
+      <el-table-column prop="updated_at" label="異動時間" width="110">
         <template #default="scope">
           {{ formatDateTime(scope.row.updated_at) }}
         </template>

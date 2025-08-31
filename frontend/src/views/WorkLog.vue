@@ -116,7 +116,7 @@
     <!-- 工作紀錄列表 -->
     <el-table :data="filteredWorkLogs" border style="width: 100%">
       <el-table-column type="index" label="流水號" width="80" :index="(index) => index + 1" />
-      <el-table-column prop="work_date" label="工作日期" width="100" />
+      <el-table-column prop="work_date" label="工作日期" width="110" />
       <el-table-column label="案件編號" width="120">
         <template #default="scope">
           {{ scope.row.task?.case_number }}
@@ -147,12 +147,12 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="created_at" label="建立時間" width="150">
+      <el-table-column prop="created_at" label="建立時間" width="110">
         <template #default="scope">
           {{ formatDateTime(scope.row.created_at) }}
         </template>
       </el-table-column>
-      <el-table-column prop="updated_at" label="異動時間" width="150">
+      <el-table-column prop="updated_at" label="異動時間" width="110">
         <template #default="scope">
           {{ formatDateTime(scope.row.updated_at) }}
         </template>

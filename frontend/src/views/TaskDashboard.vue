@@ -13,7 +13,7 @@
           
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <div style="display: flex; align-items: center; gap: 10px;">
-              <span style="font-size: 14px; color: #606266;">時間範圍：</span>
+              <span style="font-size: 14px; color: #34495e; font-weight: 500;">時間範圍：</span>
               <el-date-picker
                 v-model="dateRange"
                 type="daterange"
@@ -668,16 +668,17 @@ export default {
 }
 
 .card-number {
-  font-size: 28px;
+  font-size: 30px;
   font-weight: bold;
-  color: #303133;
+  color: #2c3e50;
   line-height: 1;
 }
 
 .card-label {
-  font-size: 13px;
-  color: #606266;
+  font-size: 14px;
+  color: #34495e;
   margin-top: 5px;
+  font-weight: 500;
 }
 
 .chart-container {
@@ -708,18 +709,18 @@ export default {
 }
 
 .task-title {
-  font-size: 14px;
-  color: #303133;
+  font-size: 15px;
+  color: #2c3e50;
   margin-bottom: 5px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .task-meta {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 12px;
-  color: #606266;
+  font-size: 13px;
+  color: #34495e;
 }
 
 .days-left {
@@ -734,8 +735,9 @@ export default {
 }
 
 .days-text {
-  font-size: 12px;
-  color: #606266;
+  font-size: 13px;
+  color: #34495e;
+  font-weight: 500;
 }
 
 .completed-icon {
@@ -755,19 +757,21 @@ export default {
 }
 
 .stat-label {
-  font-size: 13px;
-  color: #606266;
+  font-size: 14px;
+  color: #34495e;
   margin-top: 5px;
+  font-weight: 500;
 }
 
 .empty-state {
   text-align: center;
   padding: 30px;
-  color: #909399;
+  color: #5a6c7d;
+  font-size: 15px;
 }
 
 .empty-state .el-icon {
-  color: #C0C4CC;
+  color: #7f8c8d;
   margin-bottom: 10px;
 }
 </style>

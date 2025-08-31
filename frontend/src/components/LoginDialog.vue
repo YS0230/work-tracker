@@ -146,8 +146,8 @@ export default {
 
 .modal-header h3 {
   margin: 0;
-  color: #333;
-  font-size: 18px;
+  color: #2c3e50;
+  font-size: 19px;
   font-weight: 600;
 }
 
@@ -162,8 +162,9 @@ export default {
 .form-group label {
   display: block;
   margin-bottom: 6px;
-  color: #555;
-  font-weight: 500;
+  color: #2c3e50;
+  font-weight: 600;
+  font-size: 14px;
 }
 
 .form-group input {

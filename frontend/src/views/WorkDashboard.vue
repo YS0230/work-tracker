@@ -754,11 +754,12 @@ export default {
 .empty-state {
   text-align: center;
   padding: 30px;
-  color: #909399;
+  color: #5a6c7d;
+  font-size: 15px;
 }
 
 .empty-state .el-icon {
-  color: #C0C4CC;
+  color: #7f8c8d;
   margin-bottom: 10px;
 }
 </style>
