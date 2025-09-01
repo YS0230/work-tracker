@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory, render_template_string
 from flask_cors import CORS
 from models import db, Category, Task, WorkLog
 from datetime import datetime, date
@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', static_url_path='/static')
 
 # 配置
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///work_tracker.db'
@@ -405,6 +405,19 @@ def delete_work_log(log_id):
 def get_incomplete_tasks():
     tasks = Task.query.filter(Task.status.in_(['pending', 'in_progress'])).order_by(Task.created_at.desc()).all()
     return jsonify([task.to_dict() for task in tasks])
+
+# 服務前端靜態檔案
+@app.route('/')
+def serve_frontend():
+    return send_from_directory(app.static_folder, 'index.html')
+
+@app.route('/<path:path>')
+def serve_static_files(path):
+    try:
+        return send_from_directory(app.static_folder, path)
+    except:
+        # 如果找不到靜態檔案，返回 index.html（用於 Vue Router）
+        return send_from_directory(app.static_folder, 'index.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
