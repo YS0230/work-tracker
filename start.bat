@@ -1,25 +1,39 @@
 @echo off
-echo 啟動工作事項記錄系統...
+echo Starting Work Tracker System...
+echo.
 
-echo 安裝後端依賴...
+REM Check if setup has been run
 cd backend
-pip install -r requirements.txt
+if not exist "venv" (
+    echo.
+    echo ERROR: Virtual environment not found!
+    echo Please run setup.bat first to initialize the environment.
+    echo.
+    pause
+    exit /b 1
+)
 
-echo 啟動後端服務...
-start cmd /k "python run.py"
+cd ..
+if not exist "frontend\node_modules" (
+    echo.
+    echo ERROR: Frontend dependencies not found!
+    echo Please run setup.bat first to install dependencies.
+    echo.
+    pause
+    exit /b 1
+)
 
-echo 等待後端啟動...
-timeout /t 3
+echo Starting integrated application (frontend built into backend)...
+echo.
 
-echo 安裝前端依賴...
-cd ..\frontend
-call npm install
+cd backend
 
-echo 啟動前端服務...
-start cmd /k "npm run serve"
+echo Starting integrated service...
+start cmd /k "cd /d %cd% && venv\Scripts\activate.bat && python app.py"
 
-echo 系統啟動完成!
-echo 前端: http://localhost:8080
-echo 後端: http://localhost:5000
+echo.
+echo System startup completed!
+echo Visit: http://localhost:5000
 
+:end
 pause
